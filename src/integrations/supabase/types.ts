@@ -116,6 +116,45 @@ export type Database = {
           },
         ]
       }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_order: number | null
+          type: string
+          used_count: number | null
+          value: number
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order?: number | null
+          type?: string
+          used_count?: number | null
+          value?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order?: number | null
+          type?: string
+          used_count?: number | null
+          value?: number
+        }
+        Relationships: []
+      }
       crm_interactions: {
         Row: {
           body: string | null
@@ -158,14 +197,20 @@ export type Database = {
         Row: {
           address_line1: string | null
           address_line2: string | null
+          apartment: string | null
           auth_id: string | null
           city: string | null
+          country: string | null
           created_at: string | null
           email: string
+          floor: string | null
           full_name: string | null
+          house_number: string | null
           id: string
           notes: string | null
           phone: string | null
+          shipping_notes: string | null
+          street: string | null
           tags: string[] | null
           total_orders: number | null
           total_spent: number | null
@@ -174,14 +219,20 @@ export type Database = {
         Insert: {
           address_line1?: string | null
           address_line2?: string | null
+          apartment?: string | null
           auth_id?: string | null
           city?: string | null
+          country?: string | null
           created_at?: string | null
           email: string
+          floor?: string | null
           full_name?: string | null
+          house_number?: string | null
           id?: string
           notes?: string | null
           phone?: string | null
+          shipping_notes?: string | null
+          street?: string | null
           tags?: string[] | null
           total_orders?: number | null
           total_spent?: number | null
@@ -190,14 +241,20 @@ export type Database = {
         Update: {
           address_line1?: string | null
           address_line2?: string | null
+          apartment?: string | null
           auth_id?: string | null
           city?: string | null
+          country?: string | null
           created_at?: string | null
           email?: string
+          floor?: string | null
           full_name?: string | null
+          house_number?: string | null
           id?: string
           notes?: string | null
           phone?: string | null
+          shipping_notes?: string | null
+          street?: string | null
           tags?: string[] | null
           total_orders?: number | null
           total_spent?: number | null
@@ -274,6 +331,80 @@ export type Database = {
         }
         Relationships: []
       }
+      market_research_results: {
+        Row: {
+          competitor_prices: Json | null
+          created_at: string | null
+          id: string
+          product_id: string | null
+          recommendation: string | null
+          result_data: Json | null
+          suppliers: Json | null
+        }
+        Insert: {
+          competitor_prices?: Json | null
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          recommendation?: string | null
+          result_data?: Json | null
+          suppliers?: Json | null
+        }
+        Update: {
+          competitor_prices?: Json | null
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          recommendation?: string | null
+          result_data?: Json | null
+          suppliers?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_research_results_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_research_settings: {
+        Row: {
+          api_key_encrypted: string | null
+          api_provider: string
+          custom_prompt: string | null
+          id: string
+          last_run_at: string | null
+          schedule_day: number | null
+          schedule_hour: number | null
+          schedule_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_key_encrypted?: string | null
+          api_provider?: string
+          custom_prompt?: string | null
+          id?: string
+          last_run_at?: string | null
+          schedule_day?: number | null
+          schedule_hour?: number | null
+          schedule_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_key_encrypted?: string | null
+          api_provider?: string
+          custom_prompt?: string | null
+          id?: string
+          last_run_at?: string | null
+          schedule_day?: number | null
+          schedule_hour?: number | null
+          schedule_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           id: string
@@ -334,6 +465,8 @@ export type Database = {
       }
       orders: {
         Row: {
+          coupon_code: string | null
+          coupon_discount: number | null
           created_at: string | null
           customer_id: string | null
           delivered_at: string | null
@@ -356,6 +489,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          coupon_code?: string | null
+          coupon_discount?: number | null
           created_at?: string | null
           customer_id?: string | null
           delivered_at?: string | null
@@ -378,6 +513,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          coupon_code?: string | null
+          coupon_discount?: number | null
           created_at?: string | null
           customer_id?: string | null
           delivered_at?: string | null
