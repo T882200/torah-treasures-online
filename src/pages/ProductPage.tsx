@@ -3,11 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/storefront/Header";
 import Footer from "@/components/storefront/Footer";
+import ProductImageGallery from "@/components/storefront/ProductImageGallery";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/contexts/CartContext";
 import { ShoppingCart, ChevronLeft, Minus, Plus } from "lucide-react";
-import { useState } from "react";
 
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
