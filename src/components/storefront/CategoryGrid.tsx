@@ -27,7 +27,7 @@ const CategoryGrid = () => {
               transition={{ delay: i * 0.1, duration: 0.5 }}
             >
               <Link
-                to={`/category/${cat.slug}`}
+                to={cat.slug === "stam-department" ? "/stam" : `/category/${cat.slug}`}
                 className={`block ${cat.color} rounded-lg p-6 md:p-8 text-center hover:shadow-elegant transition-all duration-300 group border border-border`}
               >
                 <cat.icon className="h-10 w-10 mx-auto mb-4 text-accent group-hover:scale-110 transition-transform" />
