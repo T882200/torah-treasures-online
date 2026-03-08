@@ -236,6 +236,9 @@ const ProductPage = () => {
                 </div>
               </div>
             )}
+
+            {/* STaM Attributes */}
+            <StamAttributesDisplay productId={product.id} />
           </div>
         </div>
       </main>
