@@ -66,7 +66,6 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             <ChatbotWidget />
-            </Routes>
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>
