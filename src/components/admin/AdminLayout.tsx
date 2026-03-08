@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ShoppingCart, Users, ArrowRight, Upload, MessageCircle, Mail } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, ArrowRight, Upload, MessageCircle, Mail, FolderOpen, Tag, FlaskConical, Download } from "lucide-react";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -10,11 +10,15 @@ interface AdminLayoutProps {
 const navItems = [
   { label: "דשבורד", icon: LayoutDashboard, href: "/admin" },
   { label: "מוצרים", icon: Package, href: "/admin/products" },
+  { label: "קטגוריות", icon: FolderOpen, href: "/admin/categories" },
   { label: "ייבוא CSV", icon: Upload, href: "/admin/products/import" },
   { label: "הזמנות", icon: ShoppingCart, href: "/admin/orders" },
   { label: "לקוחות", icon: Users, href: "/admin/customers" },
+  { label: "קופונים", icon: Tag, href: "/admin/coupons" },
   { label: "צ׳אטבוט", icon: MessageCircle, href: "/admin/chat" },
   { label: "קמפיינים", icon: Mail, href: "/admin/campaigns" },
+  { label: "סקר שוק", icon: FlaskConical, href: "/admin/research" },
+  { label: "ייצוא נתונים", icon: Download, href: "/admin/exports" },
 ];
 
 const AdminLayout = ({ children, title }: AdminLayoutProps) => {
@@ -22,7 +26,6 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-muted flex" dir="rtl">
-      {/* Sidebar */}
       <aside className="w-64 bg-primary text-primary-foreground flex-shrink-0 hidden md:flex flex-col">
         <div className="p-4 border-b border-primary-foreground/20">
           <Link to="/admin" className="font-display text-xl font-bold">
@@ -30,7 +33,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
           </Link>
           <p className="text-xs text-primary-foreground/60 mt-1">פאנל ניהול</p>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.href ||
               (item.href !== "/admin" && location.pathname.startsWith(item.href));
@@ -58,13 +61,11 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen">
         <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
           <h1 className="font-display text-xl font-bold text-foreground">{title}</h1>
-          {/* Mobile nav toggle placeholder */}
-          <div className="md:hidden flex gap-2">
-            {navItems.map((item) => (
+          <div className="md:hidden flex gap-2 overflow-x-auto">
+            {navItems.slice(0, 6).map((item) => (
               <Link key={item.href} to={item.href}>
                 <item.icon className="h-5 w-5 text-muted-foreground" />
               </Link>

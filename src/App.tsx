@@ -15,18 +15,22 @@ import AuthPage from "./pages/AuthPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AccountPage from "./pages/AccountPage";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminProductEdit from "./pages/admin/AdminProductEdit";
 import AdminProductImport from "./pages/admin/AdminProductImport";
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCustomerDetail from "./pages/admin/AdminCustomerDetail";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminChatConversations from "./pages/admin/AdminChatConversations";
 import AdminEmailCampaigns from "./pages/admin/AdminEmailCampaigns";
+import AdminMarketResearch from "./pages/admin/AdminMarketResearch";
+import AdminExports from "./pages/admin/AdminExports";
 import ChatbotWidget from "./components/storefront/ChatbotWidget";
-import OrderConfirmationPage from "./pages/OrderConfirmationPage";
-import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,12 +64,16 @@ const App = () => (
               <Route path="/admin/products/new" element={<ProtectedRoute requireAdmin><AdminProductEdit /></ProtectedRoute>} />
               <Route path="/admin/products/:id" element={<ProtectedRoute requireAdmin><AdminProductEdit /></ProtectedRoute>} />
               <Route path="/admin/products/import" element={<ProtectedRoute requireAdmin><AdminProductImport /></ProtectedRoute>} />
+              <Route path="/admin/categories" element={<ProtectedRoute requireAdmin><AdminCategories /></ProtectedRoute>} />
               <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />
               <Route path="/admin/orders/:id" element={<ProtectedRoute requireAdmin><AdminOrderDetail /></ProtectedRoute>} />
               <Route path="/admin/customers" element={<ProtectedRoute requireAdmin><AdminCustomers /></ProtectedRoute>} />
               <Route path="/admin/customers/:id" element={<ProtectedRoute requireAdmin><AdminCustomerDetail /></ProtectedRoute>} />
+              <Route path="/admin/coupons" element={<ProtectedRoute requireAdmin><AdminCoupons /></ProtectedRoute>} />
               <Route path="/admin/chat" element={<ProtectedRoute requireAdmin><AdminChatConversations /></ProtectedRoute>} />
               <Route path="/admin/campaigns" element={<ProtectedRoute requireAdmin><AdminEmailCampaigns /></ProtectedRoute>} />
+              <Route path="/admin/research" element={<ProtectedRoute requireAdmin><AdminMarketResearch /></ProtectedRoute>} />
+              <Route path="/admin/exports" element={<ProtectedRoute requireAdmin><AdminExports /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
