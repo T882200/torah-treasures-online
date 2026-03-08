@@ -17,28 +17,48 @@ const GlobalSearch = () => {
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
+      setLoading(false);
       return;
     }
     setLoading(true);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
-      const { data } = await supabase
-        .from("products")
-        .select("id, name, slug, price, product_images(url, position)")
-        .eq("is_active", true)
-        .ilike("name", `%${query}%`)
-        .limit(8);
-      setResults(data || []);
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("id, name, slug, price, product_images(url, position)")
+          .or(`name.ilike.%${query}%,description.ilike.%${query}%,catalog_number.ilike.%${query}%`)
+          .limit(8);
+        if (error) {
+          console.error("Search error:", error);
+          // Fallback: simpler query without OR
+          const { data: fallback } = await supabase
+            .from("products")
+            .select("id, name, slug, price, product_images(url, position)")
+            .ilike("name", `%${query}%`)
+            .limit(8);
+          setResults(fallback || []);
+        } else {
+          setResults(data || []);
+        }
+      } catch (err) {
+        console.error("Search exception:", err);
+        setResults([]);
+      }
       setLoading(false);
     }, 300);
     return () => clearTimeout(debounceRef.current);
   }, [query]);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    } else {
+      setQuery("");
+      setResults([]);
+    }
   }, [open]);
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -84,7 +104,7 @@ const GlobalSearch = () => {
               transition={{ duration: 0.2 }}
               className="fixed top-20 left-1/2 -translate-x-1/2 w-[90vw] max-w-lg z-[101]"
             >
-              <div className="bg-card rounded-lg border border-border shadow-elegant overflow-hidden">
+              <div className="bg-card rounded-lg border border-border shadow-elegant overflow-hidden" dir="rtl">
                 <div className="flex items-center gap-3 p-3 border-b border-border">
                   <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <Input
