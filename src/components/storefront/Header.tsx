@@ -2,6 +2,7 @@ import { ShoppingCart, User, Search, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
