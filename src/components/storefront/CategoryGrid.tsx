@@ -17,7 +17,7 @@ const CategoryGrid = () => {
         <h2 className="font-display text-3xl font-bold text-foreground text-center mb-10">
           קטגוריות מובילות
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
           {categories.map((cat, i) => (
             <motion.div
               key={cat.slug}
