@@ -49,6 +49,7 @@ const App = () => (
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmationPage />} />
 
               {/* Authenticated */}
               <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
