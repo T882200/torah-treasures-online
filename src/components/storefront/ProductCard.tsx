@@ -2,6 +2,7 @@ import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ProductBadges from "./ProductBadges";
+import { useCart } from "@/contexts/CartContext";
 
 interface ProductCardProps {
   id: string;
@@ -14,6 +15,7 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ id, name, slug, price, priceRaw, imageUrl, inStock = true }: ProductCardProps) => {
+  const { addItem } = useCart();
   const formattedPrice = `₪${price.toFixed(2)}`;
   const formattedRawPrice = priceRaw ? `₪${priceRaw.toFixed(2)}` : null;
 
@@ -49,7 +51,17 @@ const ProductCard = ({ id, name, slug, price, priceRaw, imageUrl, inStock = true
             <span className={`text-xs font-body ${inStock ? 'text-green-600' : 'text-destructive'}`}>
               {inStock ? 'במלאי' : 'אזל מהמלאי'}
             </span>
-            <Button variant="gold" size="sm" className="gap-1" onClick={(e) => e.preventDefault()}>
+            <Button
+              variant="gold"
+              size="sm"
+              className="gap-1"
+              disabled={!inStock}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                addItem({ productId: id, name, price, imageUrl });
+              }}
+            >
               <ShoppingCart className="h-3.5 w-3.5" />
               הוסף
             </Button>
