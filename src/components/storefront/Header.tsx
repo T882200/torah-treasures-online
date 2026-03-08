@@ -37,7 +37,7 @@ const Header = () => {
               <Button variant="ghost" size="icon" className="relative text-primary-foreground hover:text-accent hover:bg-primary/80">
                 <ShoppingCart className="h-5 w-5" />
                 <span className="absolute -top-1 -left-1 bg-accent text-accent-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                  0
+                  {totalItems}
                 </span>
               </Button>
             </Link>
