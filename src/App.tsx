@@ -25,6 +25,8 @@ import AdminCustomerDetail from "./pages/admin/AdminCustomerDetail";
 import AdminChatConversations from "./pages/admin/AdminChatConversations";
 import AdminEmailCampaigns from "./pages/admin/AdminEmailCampaigns";
 import ChatbotWidget from "./components/storefront/ChatbotWidget";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +49,7 @@ const App = () => (
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmationPage />} />
 
               {/* Authenticated */}
               <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
@@ -58,6 +61,7 @@ const App = () => (
               <Route path="/admin/products/:id" element={<ProtectedRoute requireAdmin><AdminProductEdit /></ProtectedRoute>} />
               <Route path="/admin/products/import" element={<ProtectedRoute requireAdmin><AdminProductImport /></ProtectedRoute>} />
               <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />
+              <Route path="/admin/orders/:id" element={<ProtectedRoute requireAdmin><AdminOrderDetail /></ProtectedRoute>} />
               <Route path="/admin/customers" element={<ProtectedRoute requireAdmin><AdminCustomers /></ProtectedRoute>} />
               <Route path="/admin/customers/:id" element={<ProtectedRoute requireAdmin><AdminCustomerDetail /></ProtectedRoute>} />
               <Route path="/admin/chat" element={<ProtectedRoute requireAdmin><AdminChatConversations /></ProtectedRoute>} />

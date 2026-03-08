@@ -93,7 +93,7 @@ const CheckoutPage = () => {
 
       toast.success(`ההזמנה #${order.order_number} נוצרה בהצלחה! 🎉`);
       clearCart();
-      navigate("/");
+      navigate(`/order-confirmation/${order.order_number}`);
     } catch (err: unknown) {
       console.error("Checkout error:", err);
       toast.error("שגיאה ביצירת ההזמנה, נסה שוב");
