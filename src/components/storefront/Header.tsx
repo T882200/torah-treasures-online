@@ -6,7 +6,7 @@ import { useCart } from "@/contexts/CartContext";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  const { totalItems } = useCart();
   return (
     <header className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-elegant">
       <div className="container mx-auto px-4">
