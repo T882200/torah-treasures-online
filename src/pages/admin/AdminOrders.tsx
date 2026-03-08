@@ -74,7 +74,7 @@ const AdminOrders = () => {
               </TableRow>
             ) : orders && orders.length > 0 ? (
               orders.map((order) => (
-                <TableRow key={order.id} className="cursor-pointer hover:bg-muted/50">
+                <TableRow key={order.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/admin/orders/${order.id}`)}>
                   <TableCell className="font-medium">#{order.order_number}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {order.created_at ? formatDate(order.created_at) : "—"}
