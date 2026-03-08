@@ -39,20 +39,18 @@ const CheckoutPage = () => {
 
     try {
       // 1. Upsert customer
-      const customerData: Record<string, unknown> = {
-        email: form.email,
-        full_name: form.fullName,
-        phone: form.phone,
-        address_line1: form.addressLine1,
-        address_line2: form.addressLine2 || null,
-        city: form.city,
-        zip: form.zip || null,
-      };
-      if (user) customerData.auth_id = user.id;
-
       const { data: customer, error: custErr } = await supabase
         .from("customers")
-        .upsert(customerData, { onConflict: "email" })
+        .upsert({
+          email: form.email,
+          full_name: form.fullName,
+          phone: form.phone,
+          address_line1: form.addressLine1,
+          address_line2: form.addressLine2 || null,
+          city: form.city,
+          zip: form.zip || null,
+          ...(user ? { auth_id: user.id } : {}),
+        }, { onConflict: "email" })
         .select("id")
         .single();
 
