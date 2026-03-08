@@ -31,7 +31,12 @@ import AdminChatConversations from "./pages/admin/AdminChatConversations";
 import AdminEmailCampaigns from "./pages/admin/AdminEmailCampaigns";
 import AdminMarketResearch from "./pages/admin/AdminMarketResearch";
 import AdminExports from "./pages/admin/AdminExports";
+import AdminFonts from "./pages/admin/AdminFonts";
+import AdminBadges from "./pages/admin/AdminBadges";
+import AdminBanners from "./pages/admin/AdminBanners";
+import AdminHomepage from "./pages/admin/AdminHomepage";
 import ChatbotWidget from "./components/storefront/ChatbotWidget";
+import DynamicFontLoader from "./components/storefront/DynamicFontLoader";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
