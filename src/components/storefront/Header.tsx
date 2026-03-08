@@ -2,10 +2,11 @@ import { ShoppingCart, User, Search, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  const { totalItems } = useCart();
   return (
     <header className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-elegant">
       <div className="container mx-auto px-4">
@@ -36,7 +37,7 @@ const Header = () => {
               <Button variant="ghost" size="icon" className="relative text-primary-foreground hover:text-accent hover:bg-primary/80">
                 <ShoppingCart className="h-5 w-5" />
                 <span className="absolute -top-1 -left-1 bg-accent text-accent-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                  0
+                  {totalItems}
                 </span>
               </Button>
             </Link>
