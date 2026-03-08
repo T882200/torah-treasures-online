@@ -25,6 +25,8 @@ import AdminCustomerDetail from "./pages/admin/AdminCustomerDetail";
 import AdminChatConversations from "./pages/admin/AdminChatConversations";
 import AdminEmailCampaigns from "./pages/admin/AdminEmailCampaigns";
 import ChatbotWidget from "./components/storefront/ChatbotWidget";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
