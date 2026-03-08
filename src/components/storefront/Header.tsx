@@ -1,9 +1,10 @@
-import { ShoppingCart, User, Search, Menu, LogOut, Shield } from "lucide-react";
+import { ShoppingCart, User, Menu, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import GlobalSearch from "./GlobalSearch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,12 +34,9 @@ const Header = () => {
             <Link to="/category/kids" className="hover:text-accent transition-colors">ילדים</Link>
           </nav>
 
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:text-accent hover:bg-primary/80">
-              <Search className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center gap-1">
+            <GlobalSearch />
 
-            {/* User Menu */}
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
