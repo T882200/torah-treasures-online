@@ -188,7 +188,7 @@ const CheckoutPage = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">משלוח</span>
-                  <span>{shippingCost === 0 ? <span className="text-green-600">חינם</span> : `₪${shippingCost.toFixed(2)}`}</span>
+                  <span>{shippingCost === 0 ? <span className="text-emerald-600">חינם</span> : `₪${shippingCost.toFixed(2)}`}</span>
                 </div>
                 <div className="flex justify-between font-bold text-base border-t border-border pt-2">
                   <span>סה״כ</span>
