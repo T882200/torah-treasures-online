@@ -81,9 +81,14 @@ const App = () => (
               <Route path="/admin/campaigns" element={<ProtectedRoute requireAdmin><AdminEmailCampaigns /></ProtectedRoute>} />
               <Route path="/admin/research" element={<ProtectedRoute requireAdmin><AdminMarketResearch /></ProtectedRoute>} />
               <Route path="/admin/exports" element={<ProtectedRoute requireAdmin><AdminExports /></ProtectedRoute>} />
+              <Route path="/admin/fonts" element={<ProtectedRoute requireAdmin><AdminFonts /></ProtectedRoute>} />
+              <Route path="/admin/badges" element={<ProtectedRoute requireAdmin><AdminBadges /></ProtectedRoute>} />
+              <Route path="/admin/banners" element={<ProtectedRoute requireAdmin><AdminBanners /></ProtectedRoute>} />
+              <Route path="/admin/homepage" element={<ProtectedRoute requireAdmin><AdminHomepage /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <DynamicFontLoader />
             <ChatbotWidget />
           </BrowserRouter>
         </CartProvider>

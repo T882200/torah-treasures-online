@@ -20,7 +20,8 @@ const ProductCard = ({ id, name, slug, price, priceRaw, imageUrl, inStock = true
   return (
     <Link to={`/product/${slug}`} className="group block">
       <div className="bg-card rounded-lg overflow-hidden shadow-card hover:shadow-elegant transition-all duration-300 border border-border">
-        <div className="aspect-[3/4] bg-muted overflow-hidden">
+        <div className="aspect-[3/4] bg-muted overflow-hidden relative">
+          <ProductBadges productId={id} />
           {imageUrl ? (
             <img
               src={imageUrl}
