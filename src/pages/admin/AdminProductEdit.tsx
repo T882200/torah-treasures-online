@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
+import ProductImageManager from "@/components/admin/ProductImageManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,8 @@ const AdminProductEdit = () => {
     stock: "0",
     is_active: true,
   });
+
+  const [savedProductId, setSavedProductId] = useState<string | null>(id || null);
 
   const { data: product } = useQuery({
     queryKey: ["admin-product", id],
@@ -81,18 +84,21 @@ const AdminProductEdit = () => {
         is_active: form.is_active,
       };
 
-      if (isNew) {
-        const { error } = await supabase.from("products").insert(payload);
+      if (isNew && !savedProductId) {
+        const { data, error } = await supabase.from("products").insert(payload).select("id").single();
         if (error) throw error;
+        setSavedProductId(data.id);
+        return data.id;
       } else {
-        const { error } = await supabase.from("products").update(payload).eq("id", id!);
+        const productId = savedProductId || id!;
+        const { error } = await supabase.from("products").update(payload).eq("id", productId);
         if (error) throw error;
+        return productId;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast.success(isNew ? "המוצר נוצר בהצלחה" : "המוצר עודכן בהצלחה");
-      navigate("/admin/products");
+      toast.success(isNew && !savedProductId ? "המוצר נוצר — כעת ניתן להעלות תמונות" : "המוצר עודכן בהצלחה");
     },
     onError: (err: any) => {
       toast.error(`שגיאה: ${err.message}`);
@@ -176,6 +182,11 @@ const AdminProductEdit = () => {
             <Label htmlFor="is_active">מוצר פעיל</Label>
           </div>
         </div>
+
+        {/* Image Manager - show after product is saved */}
+        {savedProductId && (
+          <ProductImageManager productId={savedProductId} />
+        )}
 
         <div className="flex gap-3">
           <Button type="submit" variant="gold" className="gap-2" disabled={saveMutation.isPending}>
