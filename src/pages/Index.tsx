@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/storefront/Header";
 import Footer from "@/components/storefront/Footer";
 import HeroBanner from "@/components/storefront/HeroBanner";
@@ -5,30 +7,52 @@ import CategoryGrid from "@/components/storefront/CategoryGrid";
 import ProductCarousel from "@/components/storefront/ProductCarousel";
 import NewsletterSignup from "@/components/storefront/NewsletterSignup";
 
-// Mock data - will be replaced with Supabase queries
-const mockNewArrivals = [
-  { id: "1", name: "משנה ברורה - מהדורה חדשה", slug: "mishna-berura-new", price: 89.90, priceRaw: 120.00 },
-  { id: "2", name: "שולחן ערוך - אורח חיים", slug: "shulchan-aruch-oc", price: 65.00 },
-  { id: "3", name: "תניא עם פירוש מורחב", slug: "tanya-expanded", price: 55.00, priceRaw: 70.00 },
-  { id: "4", name: "ספר חסידים - מהדורת כיס", slug: "sefer-chasidim-pocket", price: 35.00 },
-  { id: "5", name: "מסילת ישרים - מהדורה מבוארת", slug: "mesilat-yesharim", price: 42.00 },
-  { id: "6", name: "חפץ חיים - שמירת הלשון", slug: "chafetz-chaim", price: 38.00, priceRaw: 48.00 },
-  { id: "7", name: "נועם אלימלך", slug: "noam-elimelech", price: 52.00 },
-  { id: "8", name: "ליקוטי מוהר״ן", slug: "likutei-moharan", price: 75.00 },
-];
-
-const mockBestSellers = [
-  { id: "9", name: "תלמוד בבלי - מסכת ברכות", slug: "talmud-berachot", price: 95.00 },
-  { id: "10", name: "חומש עם רש״י - בראשית", slug: "chumash-rashi-bereishit", price: 48.00 },
-  { id: "11", name: "סידור תפילה - נוסח אשכנז", slug: "siddur-ashkenaz", price: 32.00 },
-  { id: "12", name: "הלכות שבת - שמירת שבת כהלכתה", slug: "shmirat-shabbat", price: 78.00, priceRaw: 95.00 },
-  { id: "13", name: "קיצור שולחן ערוך", slug: "kitzur-shulchan-aruch", price: 45.00 },
-  { id: "14", name: "פרקי אבות מבואר", slug: "pirkei-avot", price: 28.00 },
-  { id: "15", name: "זוהר הקדוש - כרך א׳", slug: "zohar-vol-1", price: 110.00 },
-  { id: "16", name: "שערי תשובה", slug: "shaarei-teshuva", price: 36.00 },
-];
-
 const Index = () => {
+  const { data: newArrivals } = useQuery({
+    queryKey: ["home-new-arrivals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, slug, price, price_raw, in_stock, product_images(url, position)")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (error) throw error;
+      return data.map((p) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        price: Number(p.price),
+        priceRaw: p.price_raw ? Number(p.price_raw) : undefined,
+        imageUrl: p.product_images?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))?.[0]?.url,
+        inStock: p.in_stock ?? true,
+      }));
+    },
+  });
+
+  const { data: bestSellers } = useQuery({
+    queryKey: ["home-best-sellers"],
+    queryFn: async () => {
+      // Use products with most orders as "best sellers"
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, slug, price, price_raw, in_stock, product_images(url, position)")
+        .eq("is_active", true)
+        .order("created_at", { ascending: true })
+        .limit(8);
+      if (error) throw error;
+      return data.map((p) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        price: Number(p.price),
+        priceRaw: p.price_raw ? Number(p.price_raw) : undefined,
+        imageUrl: p.product_images?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))?.[0]?.url,
+        inStock: p.in_stock ?? true,
+      }));
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -36,7 +60,10 @@ const Index = () => {
       <main>
         <HeroBanner />
         <CategoryGrid />
-        <ProductCarousel title="חדשים בחנות" products={mockNewArrivals} />
+        
+        {newArrivals && newArrivals.length > 0 && (
+          <ProductCarousel title="חדשים בחנות" products={newArrivals} />
+        )}
         
         {/* Promo Banner */}
         <section className="py-8">
@@ -52,7 +79,10 @@ const Index = () => {
           </div>
         </section>
 
-        <ProductCarousel title="רבי מכר" products={mockBestSellers} />
+        {bestSellers && bestSellers.length > 0 && (
+          <ProductCarousel title="רבי מכר" products={bestSellers} />
+        )}
+        
         <NewsletterSignup />
       </main>
 

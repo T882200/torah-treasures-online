@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/storefront/Header";
 import Footer from "@/components/storefront/Footer";
+import ProductImageGallery from "@/components/storefront/ProductImageGallery";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/contexts/CartContext";
@@ -13,7 +14,6 @@ const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<string | undefined>();
 
   const { data: product, isLoading } = useQuery({
@@ -121,36 +121,7 @@ const ProductPage = () => {
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           {/* Image Gallery */}
-          <div>
-            <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-3">
-              {images.length > 0 ? (
-                <img
-                  src={images[selectedImage]?.url}
-                  alt={images[selectedImage]?.alt_text || product.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                  אין תמונה
-                </div>
-              )}
-            </div>
-            {images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
-                {images.map((img: any, i: number) => (
-                  <button
-                    key={img.id}
-                    onClick={() => setSelectedImage(i)}
-                    className={`w-16 h-16 rounded border-2 overflow-hidden flex-shrink-0 ${
-                      i === selectedImage ? "border-accent" : "border-border"
-                    }`}
-                  >
-                    <img src={img.url} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <ProductImageGallery images={images} productName={product.name} />
 
           {/* Product Info */}
           <div>

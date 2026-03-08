@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Link } from "react-router-dom";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Plus, Search, Pencil, Trash2, Upload, Loader2 } from "lucide-react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import {
   Table,
@@ -19,6 +19,8 @@ import {
 
 const AdminProducts = () => {
   const [search, setSearch] = useState("");
+  const [draggingOver, setDraggingOver] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: products, isLoading } = useQuery({
@@ -59,6 +61,56 @@ const AdminProducts = () => {
       toast.success("המוצר נמחק");
     },
   });
+
+  const handleRowDrop = useCallback(async (productId: string, files: FileList) => {
+    setDraggingOver(null);
+    if (!files.length) return;
+
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith("image/"));
+    if (!imageFiles.length) {
+      toast.error("רק קבצי תמונה מותרים");
+      return;
+    }
+
+    setUploading(productId);
+    try {
+      // Get current image count
+      const { data: existing } = await supabase
+        .from("product_images")
+        .select("id")
+        .eq("product_id", productId);
+      const currentCount = existing?.length || 0;
+
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
+        const ext = file.name.split(".").pop();
+        const filePath = `${productId}/${Date.now()}-${i}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(filePath, file);
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(filePath);
+
+        const { error: dbError } = await supabase.from("product_images").insert({
+          product_id: productId,
+          url: publicUrl,
+          position: currentCount + i,
+        });
+        if (dbError) throw dbError;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast.success(`${imageFiles.length} תמונות הועלו ל${products?.find(p => p.id === productId)?.name || "מוצר"}`);
+    } catch (err: any) {
+      toast.error(`שגיאה: ${err.message}`);
+    } finally {
+      setUploading(null);
+    }
+  }, [products, queryClient]);
 
   return (
     <AdminLayout title="מוצרים">
@@ -104,18 +156,53 @@ const AdminProducts = () => {
               products.map((product) => {
                 const primaryImage = product.product_images
                   ?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))?.[0];
+                const isDragging = draggingOver === product.id;
+                const isUploading = uploading === product.id;
                 return (
-                  <TableRow key={product.id}>
+                  <TableRow
+                    key={product.id}
+                    className={`relative transition-colors ${isDragging ? "bg-accent/10 ring-2 ring-accent ring-inset" : ""}`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDraggingOver(product.id);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        setDraggingOver(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRowDrop(product.id, e.dataTransfer.files);
+                    }}
+                  >
                     <TableCell>
-                      <div className="w-12 h-12 bg-muted rounded overflow-hidden">
-                        {primaryImage?.url ? (
+                      <div className="w-12 h-12 bg-muted rounded overflow-hidden relative">
+                        {isUploading ? (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Loader2 className="h-4 w-4 animate-spin text-accent" />
+                          </div>
+                        ) : primaryImage?.url ? (
                           <img src={primaryImage.url} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">—</div>
                         )}
+                        {isDragging && (
+                          <div className="absolute inset-0 bg-accent/20 flex items-center justify-center rounded">
+                            <Upload className="h-4 w-4 text-accent" />
+                          </div>
+                        )}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {product.name}
+                      {isDragging && (
+                        <span className="text-xs text-accent mr-2">שחרר להעלאת תמונות</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground text-sm">{product.catalog_number || "—"}</TableCell>
                     <TableCell>₪{Number(product.price).toFixed(2)}</TableCell>
                     <TableCell>
