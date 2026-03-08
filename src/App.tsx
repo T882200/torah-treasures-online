@@ -31,7 +31,12 @@ import AdminChatConversations from "./pages/admin/AdminChatConversations";
 import AdminEmailCampaigns from "./pages/admin/AdminEmailCampaigns";
 import AdminMarketResearch from "./pages/admin/AdminMarketResearch";
 import AdminExports from "./pages/admin/AdminExports";
+import AdminFonts from "./pages/admin/AdminFonts";
+import AdminBadges from "./pages/admin/AdminBadges";
+import AdminBanners from "./pages/admin/AdminBanners";
+import AdminHomepage from "./pages/admin/AdminHomepage";
 import ChatbotWidget from "./components/storefront/ChatbotWidget";
+import DynamicFontLoader from "./components/storefront/DynamicFontLoader";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,9 +81,14 @@ const App = () => (
               <Route path="/admin/campaigns" element={<ProtectedRoute requireAdmin><AdminEmailCampaigns /></ProtectedRoute>} />
               <Route path="/admin/research" element={<ProtectedRoute requireAdmin><AdminMarketResearch /></ProtectedRoute>} />
               <Route path="/admin/exports" element={<ProtectedRoute requireAdmin><AdminExports /></ProtectedRoute>} />
+              <Route path="/admin/fonts" element={<ProtectedRoute requireAdmin><AdminFonts /></ProtectedRoute>} />
+              <Route path="/admin/badges" element={<ProtectedRoute requireAdmin><AdminBadges /></ProtectedRoute>} />
+              <Route path="/admin/banners" element={<ProtectedRoute requireAdmin><AdminBanners /></ProtectedRoute>} />
+              <Route path="/admin/homepage" element={<ProtectedRoute requireAdmin><AdminHomepage /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <DynamicFontLoader />
             <ChatbotWidget />
           </BrowserRouter>
         </CartProvider>

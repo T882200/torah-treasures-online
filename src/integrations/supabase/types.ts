@@ -193,6 +193,38 @@ export type Database = {
           },
         ]
       }
+      custom_font_files: {
+        Row: {
+          file_url: string
+          font_id: string
+          id: string
+          style: string
+          weight: number
+        }
+        Insert: {
+          file_url: string
+          font_id: string
+          id?: string
+          style?: string
+          weight?: number
+        }
+        Update: {
+          file_url?: string
+          font_id?: string
+          id?: string
+          style?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_font_files_font_id_fkey"
+            columns: ["font_id"]
+            isOneToOne: false
+            referencedRelation: "site_fonts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address_line1: string | null
@@ -328,6 +360,39 @@ export type Database = {
           is_subscribed?: boolean | null
           source?: string | null
           subscribed_at?: string | null
+        }
+        Relationships: []
+      }
+      homepage_sections: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          position: number | null
+          title: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          position?: number | null
+          title?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          position?: number | null
+          title?: string | null
+          type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -545,6 +610,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_badge_assignments: {
+        Row: {
+          badge_id: string
+          product_id: string
+        }
+        Insert: {
+          badge_id: string
+          product_id: string
+        }
+        Update: {
+          badge_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_badge_assignments_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "product_badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_badge_assignments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_badges: {
+        Row: {
+          bg_color: string | null
+          corner: string | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          label: string | null
+          name: string
+          text_color: string | null
+          type: string
+        }
+        Insert: {
+          bg_color?: string | null
+          corner?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          label?: string | null
+          name: string
+          text_color?: string | null
+          type?: string
+        }
+        Update: {
+          bg_color?: string | null
+          corner?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          label?: string | null
+          name?: string
+          text_color?: string | null
+          type?: string
+        }
+        Relationships: []
       }
       product_categories: {
         Row: {
@@ -767,6 +901,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      promo_banners: {
+        Row: {
+          bg_color: string | null
+          created_at: string | null
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          link_url: string | null
+          position: number | null
+          starts_at: string | null
+          subtitle: string | null
+          text_color: string | null
+          title: string | null
+        }
+        Insert: {
+          bg_color?: string | null
+          created_at?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          position?: number | null
+          starts_at?: string | null
+          subtitle?: string | null
+          text_color?: string | null
+          title?: string | null
+        }
+        Update: {
+          bg_color?: string | null
+          created_at?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          position?: number | null
+          starts_at?: string | null
+          subtitle?: string | null
+          text_color?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
+      site_fonts: {
+        Row: {
+          family_name: string
+          google_url: string | null
+          id: string
+          role: string
+          source: string
+          updated_at: string | null
+        }
+        Insert: {
+          family_name: string
+          google_url?: string | null
+          id?: string
+          role: string
+          source?: string
+          updated_at?: string | null
+        }
+        Update: {
+          family_name?: string
+          google_url?: string | null
+          id?: string
+          role?: string
+          source?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       stam_attributes: {
         Row: {

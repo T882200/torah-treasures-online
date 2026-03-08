@@ -1,6 +1,7 @@
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import ProductBadges from "./ProductBadges";
 
 interface ProductCardProps {
   id: string;
@@ -12,14 +13,15 @@ interface ProductCardProps {
   inStock?: boolean;
 }
 
-const ProductCard = ({ name, slug, price, priceRaw, imageUrl, inStock = true }: ProductCardProps) => {
+const ProductCard = ({ id, name, slug, price, priceRaw, imageUrl, inStock = true }: ProductCardProps) => {
   const formattedPrice = `₪${price.toFixed(2)}`;
   const formattedRawPrice = priceRaw ? `₪${priceRaw.toFixed(2)}` : null;
 
   return (
     <Link to={`/product/${slug}`} className="group block">
       <div className="bg-card rounded-lg overflow-hidden shadow-card hover:shadow-elegant transition-all duration-300 border border-border">
-        <div className="aspect-[3/4] bg-muted overflow-hidden">
+        <div className="aspect-[3/4] bg-muted overflow-hidden relative">
+          <ProductBadges productId={id} />
           {imageUrl ? (
             <img
               src={imageUrl}
