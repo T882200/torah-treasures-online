@@ -13,7 +13,7 @@ interface ProductCardProps {
   inStock?: boolean;
 }
 
-const ProductCard = ({ name, slug, price, priceRaw, imageUrl, inStock = true }: ProductCardProps) => {
+const ProductCard = ({ id, name, slug, price, priceRaw, imageUrl, inStock = true }: ProductCardProps) => {
   const formattedPrice = `₪${price.toFixed(2)}`;
   const formattedRawPrice = priceRaw ? `₪${priceRaw.toFixed(2)}` : null;
 
