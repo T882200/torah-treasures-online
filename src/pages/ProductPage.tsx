@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/contexts/CartContext";
 import { ShoppingCart, ChevronLeft, Minus, Plus } from "lucide-react";
 import { useState } from "react";
+import StamAttributesDisplay from "@/components/storefront/StamAttributesDisplay";
+import SEOHead from "@/components/storefront/SEOHead";
 
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -97,8 +99,30 @@ const ProductPage = () => {
     );
   }
 
+  const jsonLd = product ? {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description || undefined,
+    image: images[0]?.url,
+    offers: {
+      "@type": "Offer",
+      price: displayPrice,
+      priceCurrency: "ILS",
+      availability: isInStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+    },
+  } : undefined;
+
   return (
     <div className="min-h-screen bg-background">
+      {product && (
+        <SEOHead
+          title={`${product.name} | חנות ספרים`}
+          description={product.description?.slice(0, 155)}
+          ogImage={images[0]?.url}
+          jsonLd={jsonLd}
+        />
+      )}
       <Header />
       <main className="container mx-auto px-4 py-8">
         {/* Breadcrumbs */}
@@ -212,6 +236,9 @@ const ProductPage = () => {
                 </div>
               </div>
             )}
+
+            {/* STaM Attributes */}
+            <StamAttributesDisplay productId={product.id} />
           </div>
         </div>
       </main>
