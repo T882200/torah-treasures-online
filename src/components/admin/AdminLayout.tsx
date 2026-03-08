@@ -10,6 +10,7 @@ interface AdminLayoutProps {
 const navItems = [
   { label: "דשבורד", icon: LayoutDashboard, href: "/admin" },
   { label: "מוצרים", icon: Package, href: "/admin/products" },
+  { label: "ייבוא CSV", icon: Upload, href: "/admin/products/import" },
   { label: "הזמנות", icon: ShoppingCart, href: "/admin/orders" },
   { label: "לקוחות", icon: Users, href: "/admin/customers" },
 ];
