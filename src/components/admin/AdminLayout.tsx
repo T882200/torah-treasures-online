@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ShoppingCart, Users, ArrowRight, Upload } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, ArrowRight, Upload, MessageCircle, Mail } from "lucide-react";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -13,6 +13,8 @@ const navItems = [
   { label: "ייבוא CSV", icon: Upload, href: "/admin/products/import" },
   { label: "הזמנות", icon: ShoppingCart, href: "/admin/orders" },
   { label: "לקוחות", icon: Users, href: "/admin/customers" },
+  { label: "צ׳אטבוט", icon: MessageCircle, href: "/admin/chat" },
+  { label: "קמפיינים", icon: Mail, href: "/admin/campaigns" },
 ];
 
 const AdminLayout = ({ children, title }: AdminLayoutProps) => {

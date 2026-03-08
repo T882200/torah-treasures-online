@@ -6,14 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CreditCard, Truck } from "lucide-react";
+import { CreditCard, Truck, Loader2 } from "lucide-react";
 
 const CheckoutPage = () => {
   const { items, subtotal, clearCart } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const shippingCost = subtotal >= 200 ? 0 : 25;
   const total = subtotal + shippingCost;
+  const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -31,10 +35,71 @@ const CheckoutPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, simulate order creation
-    toast.success("ההזמנה נשלחה בהצלחה! 🎉");
-    clearCart();
-    navigate("/");
+    setSubmitting(true);
+
+    try {
+      // 1. Upsert customer
+      const { data: customer, error: custErr } = await supabase
+        .from("customers")
+        .upsert({
+          email: form.email,
+          full_name: form.fullName,
+          phone: form.phone,
+          address_line1: form.addressLine1,
+          address_line2: form.addressLine2 || null,
+          city: form.city,
+          zip: form.zip || null,
+          ...(user ? { auth_id: user.id } : {}),
+        }, { onConflict: "email" })
+        .select("id")
+        .single();
+
+      if (custErr) throw custErr;
+
+      // 2. Create order
+      const { data: order, error: orderErr } = await supabase
+        .from("orders")
+        .insert({
+          customer_id: customer.id,
+          subtotal,
+          shipping_cost: shippingCost,
+          total,
+          status: "pending",
+          payment_status: "unpaid",
+          payment_method: "manual",
+        })
+        .select("id, order_number")
+        .single();
+
+      if (orderErr) throw orderErr;
+
+      // 3. Create order items
+      const orderItems = items.map(item => ({
+        order_id: order.id,
+        product_id: item.productId,
+        variant_id: item.variantId || null,
+        product_name: item.name,
+        variant_label: item.variantLabel || null,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.price * item.quantity,
+      }));
+
+      const { error: itemsErr } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsErr) throw itemsErr;
+
+      toast.success(`ההזמנה #${order.order_number} נוצרה בהצלחה! 🎉`);
+      clearCart();
+      navigate("/");
+    } catch (err: unknown) {
+      console.error("Checkout error:", err);
+      toast.error("שגיאה ביצירת ההזמנה, נסה שוב");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (items.length === 0) {
@@ -95,12 +160,12 @@ const CheckoutPage = () => {
                 <h2 className="font-display font-bold text-lg">תשלום</h2>
               </div>
               <p className="text-muted-foreground text-sm">
-                אמצעי תשלום יתווסף בשלב הבא (Stripe / שער תשלום ישראלי).
+                כרגע ההזמנה נשמרת כ״ממתינה לתשלום״. שער תשלום יתווסף בקרוב.
               </p>
             </div>
 
-            <Button type="submit" variant="hero" size="lg" className="w-full md:w-auto">
-              בצע הזמנה — ₪{total.toFixed(2)}
+            <Button type="submit" variant="hero" size="lg" className="w-full md:w-auto" disabled={submitting}>
+              {submitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> שולח...</> : `בצע הזמנה — ₪${total.toFixed(2)}`}
             </Button>
           </div>
 
@@ -123,7 +188,7 @@ const CheckoutPage = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">משלוח</span>
-                  <span>{shippingCost === 0 ? <span className="text-green-600">חינם</span> : `₪${shippingCost.toFixed(2)}`}</span>
+                  <span>{shippingCost === 0 ? <span className="text-emerald-600">חינם</span> : `₪${shippingCost.toFixed(2)}`}</span>
                 </div>
                 <div className="flex justify-between font-bold text-base border-t border-border pt-2">
                   <span>סה״כ</span>

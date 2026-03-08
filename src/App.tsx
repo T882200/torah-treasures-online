@@ -22,6 +22,9 @@ import AdminProductImport from "./pages/admin/AdminProductImport";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCustomerDetail from "./pages/admin/AdminCustomerDetail";
+import AdminChatConversations from "./pages/admin/AdminChatConversations";
+import AdminEmailCampaigns from "./pages/admin/AdminEmailCampaigns";
+import ChatbotWidget from "./components/storefront/ChatbotWidget";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,9 +60,12 @@ const App = () => (
               <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />
               <Route path="/admin/customers" element={<ProtectedRoute requireAdmin><AdminCustomers /></ProtectedRoute>} />
               <Route path="/admin/customers/:id" element={<ProtectedRoute requireAdmin><AdminCustomerDetail /></ProtectedRoute>} />
+              <Route path="/admin/chat" element={<ProtectedRoute requireAdmin><AdminChatConversations /></ProtectedRoute>} />
+              <Route path="/admin/campaigns" element={<ProtectedRoute requireAdmin><AdminEmailCampaigns /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <ChatbotWidget />
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>
