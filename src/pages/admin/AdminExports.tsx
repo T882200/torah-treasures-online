@@ -69,17 +69,36 @@ const AdminExports = () => {
     a.click(); URL.revokeObjectURL(url);
   };
 
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 8192;
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+      for (let j = 0; j < chunk.length; j++) {
+        binary += String.fromCharCode(chunk[j]);
+      }
+    }
+    return btoa(binary);
+  };
+
   const imageToBase64 = async (url: string): Promise<string> => {
     try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => resolve("");
-        reader.readAsDataURL(blob);
-      });
-    } catch { return ""; }
+      const res = await fetch(url, { mode: "cors" });
+      if (!res.ok) return "";
+      const buffer = await res.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      // Detect mime type from magic bytes
+      let mime = "image/jpeg";
+      if (bytes[0] === 0x89 && bytes[1] === 0x50) mime = "image/png";
+      else if (bytes[0] === 0x47 && bytes[1] === 0x49) mime = "image/gif";
+      else if (bytes[0] === 0x52 && bytes[1] === 0x49) mime = "image/webp";
+      const b64 = arrayBufferToBase64(buffer);
+      return `data:${mime};base64,${b64}`;
+    } catch (err) {
+      console.warn("Base64 conversion failed for:", url, err);
+      return "";
+    }
   };
 
   const getProducts = async () => {
@@ -110,7 +129,7 @@ const AdminExports = () => {
 
       // Build base64 map if needed
       const base64Map: Record<string, string> = {};
-      if (includeBase64 && selectedFields.includes("image_base64")) {
+      if (includeBase64) {
         const allImages: { productId: string; url: string }[] = [];
         products.forEach((p: any) => {
           const mainImg = p.product_images?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))?.[0];
