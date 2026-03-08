@@ -1,24 +1,23 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet, FileText, Receipt, Truck, BarChart3, Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Receipt, Truck, BarChart3, Loader2, ShoppingBag, Store } from "lucide-react";
 
-type ExportType = "products" | "orders" | "customers" | "invoices" | "financial" | "shipping_labels";
+type ExportType = "products" | "orders" | "customers" | "invoices" | "financial" | "shipping_labels" | "shopify_products" | "shopify_orders" | "woo_products" | "woo_orders" | "wix_products";
 
 const AdminExports = () => {
   const [exporting, setExporting] = useState<ExportType | null>(null);
 
-  const downloadCSV = (data: any[], filename: string) => {
+  const downloadCSV = (data: any[], filename: string, headers?: string[]) => {
     if (!data.length) { toast.error("אין נתונים לייצוא"); return; }
-    const headers = Object.keys(data[0]);
+    const keys = headers || Object.keys(data[0]);
     const csv = [
-      headers.join(","),
-      ...data.map(row => headers.map(h => {
+      keys.join(","),
+      ...data.map(row => keys.map(h => {
         const val = row[h];
         if (val === null || val === undefined) return "";
         const str = String(val).replace(/"/g, '""');
@@ -36,6 +35,19 @@ const AdminExports = () => {
     URL.revokeObjectURL(url);
   };
 
+  const getProducts = async () => {
+    const { data, error } = await supabase.from("products").select("*, product_images(url, position), product_categories(categories(name))");
+    if (error) throw error;
+    return data || [];
+  };
+
+  const getOrders = async () => {
+    const { data, error } = await supabase.from("orders").select("*, customers(full_name, email, phone, city, street, house_number, apartment, floor, zip, country, shipping_notes), order_items(product_name, quantity, unit_price, total_price, variant_label)").order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  };
+
+  // ============ Standard exports ============
   const exportProducts = async () => {
     setExporting("products");
     try {
@@ -43,36 +55,24 @@ const AdminExports = () => {
       if (error) throw error;
       downloadCSV(data || [], "products");
       toast.success(`${data?.length || 0} מוצרים יוצאו`);
-    } catch (err: any) { toast.error(err.message); }
-    finally { setExporting(null); }
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
   };
 
   const exportOrders = async () => {
     setExporting("orders");
     try {
-      const { data, error } = await supabase.from("orders").select("order_number, status, payment_status, shipping_status, subtotal, discount, shipping_cost, total, coupon_code, tracking_number, created_at, customers(full_name, email, phone, city)").order("created_at", { ascending: false });
-      if (error) throw error;
-      const flat = (data || []).map((o: any) => ({
-        order_number: o.order_number,
-        status: o.status,
-        payment_status: o.payment_status,
-        shipping_status: o.shipping_status,
-        subtotal: o.subtotal,
-        discount: o.discount,
-        shipping_cost: o.shipping_cost,
-        total: o.total,
-        coupon_code: o.coupon_code,
-        tracking_number: o.tracking_number,
-        customer_name: o.customers?.full_name,
-        customer_email: o.customers?.email,
-        customer_phone: o.customers?.phone,
-        customer_city: o.customers?.city,
-        created_at: o.created_at,
+      const orders = await getOrders();
+      const flat = orders.map((o: any) => ({
+        order_number: o.order_number, status: o.status, payment_status: o.payment_status,
+        shipping_status: o.shipping_status, subtotal: o.subtotal, discount: o.discount,
+        shipping_cost: o.shipping_cost, total: o.total, coupon_code: o.coupon_code,
+        tracking_number: o.tracking_number, customer_name: o.customers?.full_name,
+        customer_email: o.customers?.email, customer_phone: o.customers?.phone,
+        customer_city: o.customers?.city, created_at: o.created_at,
       }));
       downloadCSV(flat, "orders");
       toast.success(`${flat.length} הזמנות יוצאו`);
-    } catch (err: any) { toast.error(err.message); }
-    finally { setExporting(null); }
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
   };
 
   const exportCustomers = async () => {
@@ -83,8 +83,7 @@ const AdminExports = () => {
       const flat = (data || []).map(c => ({ ...c, tags: c.tags?.join("; ") || "" }));
       downloadCSV(flat, "customers");
       toast.success(`${flat.length} לקוחות יוצאו`);
-    } catch (err: any) { toast.error(err.message); }
-    finally { setExporting(null); }
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
   };
 
   const exportInvoices = async () => {
@@ -93,21 +92,14 @@ const AdminExports = () => {
       const { data, error } = await supabase.from("orders").select("order_number, total, subtotal, shipping_cost, discount, payment_status, payment_method, created_at, customers(full_name, email, phone, city, address_line1, zip)").eq("payment_status", "paid").order("created_at", { ascending: false });
       if (error) throw error;
       const flat = (data || []).map((o: any) => ({
-        invoice_number: `INV-${o.order_number}`,
-        date: o.created_at?.split("T")[0],
-        customer_name: o.customers?.full_name,
-        customer_email: o.customers?.email,
+        invoice_number: `INV-${o.order_number}`, date: o.created_at?.split("T")[0],
+        customer_name: o.customers?.full_name, customer_email: o.customers?.email,
         customer_address: `${o.customers?.address_line1 || ""}, ${o.customers?.city || ""} ${o.customers?.zip || ""}`,
-        subtotal: o.subtotal,
-        discount: o.discount,
-        shipping: o.shipping_cost,
-        total: o.total,
-        payment_method: o.payment_method,
+        subtotal: o.subtotal, discount: o.discount, shipping: o.shipping_cost, total: o.total, payment_method: o.payment_method,
       }));
       downloadCSV(flat, "invoices");
       toast.success(`${flat.length} חשבוניות יוצאו`);
-    } catch (err: any) { toast.error(err.message); }
-    finally { setExporting(null); }
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
   };
 
   const exportFinancial = async () => {
@@ -117,8 +109,7 @@ const AdminExports = () => {
       if (error) throw error;
       downloadCSV(data || [], "financial_report");
       toast.success("דוח פיננסי יוצא");
-    } catch (err: any) { toast.error(err.message); }
-    finally { setExporting(null); }
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
   };
 
   const exportShippingLabels = async () => {
@@ -127,26 +118,210 @@ const AdminExports = () => {
       const { data, error } = await supabase.from("orders").select("order_number, tracking_number, shipping_status, customers(full_name, phone, city, address_line1, address_line2, zip, country, street, house_number, floor, apartment, shipping_notes)").in("shipping_status", ["pending", "processing"]).order("created_at", { ascending: false });
       if (error) throw error;
       const flat = (data || []).map((o: any) => ({
-        order_number: o.order_number,
-        name: o.customers?.full_name,
-        phone: o.customers?.phone,
-        street: o.customers?.street,
-        house: o.customers?.house_number,
-        floor: o.customers?.floor,
-        apartment: o.customers?.apartment,
-        city: o.customers?.city,
-        zip: o.customers?.zip,
-        country: o.customers?.country,
-        notes: o.customers?.shipping_notes,
-        tracking: o.tracking_number,
+        order_number: o.order_number, name: o.customers?.full_name, phone: o.customers?.phone,
+        street: o.customers?.street, house: o.customers?.house_number, floor: o.customers?.floor,
+        apartment: o.customers?.apartment, city: o.customers?.city, zip: o.customers?.zip,
+        country: o.customers?.country, notes: o.customers?.shipping_notes, tracking: o.tracking_number,
       }));
       downloadCSV(flat, "shipping_labels");
       toast.success(`${flat.length} מדבקות משלוח יוצאו`);
-    } catch (err: any) { toast.error(err.message); }
-    finally { setExporting(null); }
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
   };
 
-  const exports = [
+  // ============ Shopify format ============
+  const exportShopifyProducts = async () => {
+    setExporting("shopify_products");
+    try {
+      const products = await getProducts();
+      const rows = products.map((p: any) => {
+        const img = p.product_images?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
+        const categories = p.product_categories?.map((pc: any) => pc.categories?.name).filter(Boolean);
+        return {
+          Handle: p.slug,
+          Title: p.name,
+          "Body (HTML)": p.description || "",
+          Vendor: "",
+          "Product Category": categories?.[0] || "",
+          Type: categories?.[0] || "",
+          Tags: categories?.join(", ") || "",
+          Published: p.is_active ? "TRUE" : "FALSE",
+          "Option1 Name": "Title",
+          "Option1 Value": "Default Title",
+          "Variant SKU": p.catalog_number || "",
+          "Variant Grams": "",
+          "Variant Inventory Tracker": "shopify",
+          "Variant Inventory Qty": p.stock || 0,
+          "Variant Inventory Policy": "deny",
+          "Variant Fulfillment Service": "manual",
+          "Variant Price": p.price,
+          "Variant Compare At Price": p.price_raw || "",
+          "Variant Requires Shipping": "TRUE",
+          "Variant Taxable": "TRUE",
+          "Variant Barcode": p.barcode || "",
+          "Image Src": img?.[0]?.url || "",
+          "Image Position": 1,
+          "Image Alt Text": p.name,
+          "SEO Title": p.name,
+          "SEO Description": (p.description || "").substring(0, 160),
+          Status: p.is_active ? "active" : "draft",
+        };
+      });
+      downloadCSV(rows, "shopify_products");
+      toast.success(`${rows.length} מוצרים יוצאו בפורמט Shopify`);
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
+  };
+
+  const exportShopifyOrders = async () => {
+    setExporting("shopify_orders");
+    try {
+      const orders = await getOrders();
+      const rows: any[] = [];
+      orders.forEach((o: any) => {
+        const items = o.order_items || [];
+        items.forEach((item: any, idx: number) => {
+          rows.push({
+            Name: `#${o.order_number}`,
+            Email: o.customers?.email || "",
+            "Financial Status": o.payment_status === "paid" ? "paid" : "pending",
+            "Fulfillment Status": o.shipping_status === "delivered" ? "fulfilled" : o.shipping_status === "shipped" ? "fulfilled" : "unfulfilled",
+            Currency: "ILS",
+            "Lineitem quantity": item.quantity,
+            "Lineitem name": item.product_name || "",
+            "Lineitem price": item.unit_price,
+            "Shipping Name": o.customers?.full_name || "",
+            "Shipping Phone": o.customers?.phone || "",
+            "Shipping Street": `${o.customers?.street || ""} ${o.customers?.house_number || ""}`.trim(),
+            "Shipping City": o.customers?.city || "",
+            "Shipping Zip": o.customers?.zip || "",
+            "Shipping Country": o.customers?.country || "IL",
+            Total: idx === 0 ? o.total : "",
+            Subtotal: idx === 0 ? o.subtotal : "",
+            Shipping: idx === 0 ? o.shipping_cost : "",
+            Discount: idx === 0 ? o.discount : "",
+            "Created at": o.created_at,
+            Notes: o.notes || "",
+          });
+        });
+      });
+      downloadCSV(rows, "shopify_orders");
+      toast.success(`${rows.length} שורות הזמנות יוצאו בפורמט Shopify`);
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
+  };
+
+  // ============ WooCommerce format ============
+  const exportWooProducts = async () => {
+    setExporting("woo_products");
+    try {
+      const products = await getProducts();
+      const rows = products.map((p: any) => {
+        const img = p.product_images?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
+        const categories = p.product_categories?.map((pc: any) => pc.categories?.name).filter(Boolean);
+        const images = img?.map((i: any) => i.url).join(", ") || "";
+        return {
+          ID: "",
+          Type: "simple",
+          SKU: p.catalog_number || "",
+          Name: p.name,
+          Published: p.is_active ? 1 : 0,
+          "Is featured?": 0,
+          "Visibility in catalog": "visible",
+          "Short description": (p.description || "").substring(0, 200),
+          Description: p.description || "",
+          "Tax status": "taxable",
+          "In stock?": (p.stock || 0) > 0 ? 1 : 0,
+          Stock: p.stock || 0,
+          "Backorders allowed?": 0,
+          "Regular price": p.price_raw || p.price,
+          "Sale price": p.price_raw ? p.price : "",
+          Categories: categories?.join(", ") || "",
+          Tags: "",
+          Images: images,
+          "External URL": "",
+          "Button text": "",
+          Barcode: p.barcode || "",
+        };
+      });
+      downloadCSV(rows, "woocommerce_products");
+      toast.success(`${rows.length} מוצרים יוצאו בפורמט WooCommerce`);
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
+  };
+
+  const exportWooOrders = async () => {
+    setExporting("woo_orders");
+    try {
+      const orders = await getOrders();
+      const rows: any[] = [];
+      orders.forEach((o: any) => {
+        (o.order_items || []).forEach((item: any) => {
+          rows.push({
+            order_id: o.order_number,
+            order_status: o.status || "pending",
+            order_date: o.created_at,
+            customer_email: o.customers?.email || "",
+            billing_first_name: o.customers?.full_name?.split(" ")[0] || "",
+            billing_last_name: o.customers?.full_name?.split(" ").slice(1).join(" ") || "",
+            billing_phone: o.customers?.phone || "",
+            billing_address_1: `${o.customers?.street || ""} ${o.customers?.house_number || ""}`.trim(),
+            billing_city: o.customers?.city || "",
+            billing_postcode: o.customers?.zip || "",
+            billing_country: "IL",
+            shipping_first_name: o.customers?.full_name?.split(" ")[0] || "",
+            shipping_last_name: o.customers?.full_name?.split(" ").slice(1).join(" ") || "",
+            shipping_address_1: `${o.customers?.street || ""} ${o.customers?.house_number || ""}`.trim(),
+            shipping_city: o.customers?.city || "",
+            shipping_postcode: o.customers?.zip || "",
+            shipping_country: "IL",
+            payment_method: o.payment_method || "",
+            order_total: o.total,
+            order_shipping: o.shipping_cost,
+            order_discount: o.discount,
+            line_item_name: item.product_name || "",
+            line_item_qty: item.quantity,
+            line_item_total: item.total_price,
+          });
+        });
+      });
+      downloadCSV(rows, "woocommerce_orders");
+      toast.success(`${rows.length} שורות הזמנות יוצאו בפורמט WooCommerce`);
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
+  };
+
+  // ============ Wix format ============
+  const exportWixProducts = async () => {
+    setExporting("wix_products");
+    try {
+      const products = await getProducts();
+      const rows = products.map((p: any) => {
+        const img = p.product_images?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
+        const categories = p.product_categories?.map((pc: any) => pc.categories?.name).filter(Boolean);
+        return {
+          handleId: p.slug,
+          fieldType: "Product",
+          name: p.name,
+          description: p.description || "",
+          productImageUrl: img?.[0]?.url || "",
+          collection: categories?.join(";") || "",
+          sku: p.catalog_number || "",
+          ribbon: "",
+          price: p.price,
+          surcharge: 0,
+          visible: p.is_active ? "true" : "false",
+          discountMode: p.price_raw ? "AMOUNT" : "",
+          discountValue: p.price_raw ? (p.price_raw - p.price) : "",
+          inventory: "InStock",
+          quantity: p.stock || 0,
+          weight: "",
+          productOptionName1: "",
+          productOptionType1: "",
+          productOptionDescription1: "",
+        };
+      });
+      downloadCSV(rows, "wix_products");
+      toast.success(`${rows.length} מוצרים יוצאו בפורמט Wix`);
+    } catch (err: any) { toast.error(err.message); } finally { setExporting(null); }
+  };
+
+  const standardExports = [
     { type: "products" as ExportType, label: "מוצרים", icon: FileSpreadsheet, desc: "כל המוצרים עם מחירים, מלאי וברקודים", fn: exportProducts },
     { type: "orders" as ExportType, label: "הזמנות", icon: FileText, desc: "כל ההזמנות עם פרטי לקוח וסטטוסים", fn: exportOrders },
     { type: "customers" as ExportType, label: "לקוחות", icon: FileText, desc: "רשימת לקוחות עם פרטי קשר וסטטיסטיקות", fn: exportCustomers },
@@ -155,32 +330,61 @@ const AdminExports = () => {
     { type: "shipping_labels" as ExportType, label: "מדבקות משלוח", icon: Truck, desc: "כתובות למשלוח להזמנות ממתינות", fn: exportShippingLabels },
   ];
 
+  const platformExports = [
+    { type: "shopify_products" as ExportType, label: "Shopify — מוצרים", icon: ShoppingBag, desc: "פורמט CSV תואם לייבוא מוצרים ל-Shopify", fn: exportShopifyProducts },
+    { type: "shopify_orders" as ExportType, label: "Shopify — הזמנות", icon: ShoppingBag, desc: "פורמט CSV תואם ליצוא הזמנות Shopify", fn: exportShopifyOrders },
+    { type: "woo_products" as ExportType, label: "WooCommerce — מוצרים", icon: Store, desc: "פורמט CSV תואם ל-WooCommerce (WordPress)", fn: exportWooProducts },
+    { type: "woo_orders" as ExportType, label: "WooCommerce — הזמנות", icon: Store, desc: "פורמט CSV תואם ליצוא הזמנות WooCommerce", fn: exportWooOrders },
+    { type: "wix_products" as ExportType, label: "Wix — מוצרים", icon: Store, desc: "פורמט CSV תואם לייבוא מוצרים ל-Wix", fn: exportWixProducts },
+  ];
+
   return (
     <AdminLayout title="ייצוא נתונים">
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {exports.map((exp) => (
-          <Card key={exp.type} className="hover:shadow-elegant transition-shadow">
-            <CardHeader className="flex flex-row items-center gap-3 pb-2">
-              <exp.icon className="h-5 w-5 text-accent" />
-              <CardTitle className="text-base">{exp.label}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">{exp.desc}</p>
-              <Button
-                variant="outline"
-                className="gap-2 w-full"
-                onClick={exp.fn}
-                disabled={exporting === exp.type}
-              >
-                {exporting === exp.type ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                {exporting === exp.type ? "מייצא..." : "ייצוא CSV"}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Tabs defaultValue="standard">
+        <TabsList className="mb-6">
+          <TabsTrigger value="standard" className="gap-2"><Download className="h-3.5 w-3.5" />ייצוא רגיל</TabsTrigger>
+          <TabsTrigger value="platforms" className="gap-2"><Store className="h-3.5 w-3.5" />ייצוא לפלטפורמות</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="standard">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {standardExports.map((exp) => (
+              <ExportCard key={exp.type} exp={exp} exporting={exporting} />
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="platforms">
+          <p className="text-sm text-muted-foreground mb-4">
+            ייצוא בפורמט תואם לייבוא ישיר למערכות איקומרס מובילות. הקבצים כוללים את כל העמודות הנדרשות.
+          </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {platformExports.map((exp) => (
+              <ExportCard key={exp.type} exp={exp} exporting={exporting} />
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     </AdminLayout>
   );
 };
+
+function ExportCard({ exp, exporting }: { exp: { type: ExportType; label: string; icon: any; desc: string; fn: () => Promise<void> }; exporting: ExportType | null }) {
+  return (
+    <Card className="hover:shadow-elegant transition-shadow">
+      <CardHeader className="flex flex-row items-center gap-3 pb-2">
+        <exp.icon className="h-5 w-5 text-accent" />
+        <CardTitle className="text-base">{exp.label}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground mb-4">{exp.desc}</p>
+        <Button variant="outline" className="gap-2 w-full" onClick={exp.fn} disabled={exporting === exp.type}>
+          {exporting === exp.type ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {exporting === exp.type ? "מייצא..." : "ייצוא CSV"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default AdminExports;
