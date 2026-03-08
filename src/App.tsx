@@ -60,8 +60,12 @@ const App = () => (
               <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />
               <Route path="/admin/customers" element={<ProtectedRoute requireAdmin><AdminCustomers /></ProtectedRoute>} />
               <Route path="/admin/customers/:id" element={<ProtectedRoute requireAdmin><AdminCustomerDetail /></ProtectedRoute>} />
+              <Route path="/admin/chat" element={<ProtectedRoute requireAdmin><AdminChatConversations /></ProtectedRoute>} />
+              <Route path="/admin/campaigns" element={<ProtectedRoute requireAdmin><AdminEmailCampaigns /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
+            </Routes>
+            <ChatbotWidget />
             </Routes>
           </BrowserRouter>
         </CartProvider>
