@@ -129,7 +129,7 @@ const AdminExports = () => {
 
       // Build base64 map if needed
       const base64Map: Record<string, string> = {};
-      if (includeBase64 && selectedFields.includes("image_base64")) {
+      if (includeBase64) {
         const allImages: { productId: string; url: string }[] = [];
         products.forEach((p: any) => {
           const mainImg = p.product_images?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))?.[0];
