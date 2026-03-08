@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/contexts/CartContext";
 import { ShoppingCart, ChevronLeft, Minus, Plus } from "lucide-react";
 import { useState } from "react";
+import StamAttributesDisplay from "@/components/storefront/StamAttributesDisplay";
+import SEOHead from "@/components/storefront/SEOHead";
 
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
