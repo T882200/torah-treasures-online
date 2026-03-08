@@ -768,6 +768,65 @@ export type Database = {
           },
         ]
       }
+      stam_attributes: {
+        Row: {
+          additional_notes: string | null
+          beit_din: string | null
+          certificate_info: string | null
+          created_at: string | null
+          housing_type: string | null
+          id: string
+          is_checked_by_computer: boolean | null
+          is_checked_by_human: boolean | null
+          kosher_level: string | null
+          nusach: string | null
+          parchment_size_cm: number | null
+          product_id: string
+          script_type: string | null
+          sofer_name: string | null
+        }
+        Insert: {
+          additional_notes?: string | null
+          beit_din?: string | null
+          certificate_info?: string | null
+          created_at?: string | null
+          housing_type?: string | null
+          id?: string
+          is_checked_by_computer?: boolean | null
+          is_checked_by_human?: boolean | null
+          kosher_level?: string | null
+          nusach?: string | null
+          parchment_size_cm?: number | null
+          product_id: string
+          script_type?: string | null
+          sofer_name?: string | null
+        }
+        Update: {
+          additional_notes?: string | null
+          beit_din?: string | null
+          certificate_info?: string | null
+          created_at?: string | null
+          housing_type?: string | null
+          id?: string
+          is_checked_by_computer?: boolean | null
+          is_checked_by_human?: boolean | null
+          kosher_level?: string | null
+          nusach?: string | null
+          parchment_size_cm?: number | null
+          product_id?: string
+          script_type?: string | null
+          sofer_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stam_attributes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
