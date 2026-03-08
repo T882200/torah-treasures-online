@@ -13,7 +13,6 @@ const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<string | undefined>();
 
   const { data: product, isLoading } = useQuery({
