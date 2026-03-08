@@ -36,6 +36,7 @@ const statusVariant = (status: string): "default" | "secondary" | "destructive" 
 };
 
 const AdminOrders = () => {
+  const navigate = useNavigate();
   const { data: orders, isLoading } = useQuery({
     queryKey: ["admin-orders"],
     queryFn: async () => {
