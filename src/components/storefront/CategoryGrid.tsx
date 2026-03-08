@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { BookOpen, Scale, Heart, Sparkles } from "lucide-react";
+import { BookOpen, Scale, Heart, Sparkles, ScrollText } from "lucide-react";
 
 const categories = [
   { name: "תורה ומפרשים", slug: "torah", icon: BookOpen, color: "bg-accent/10" },
   { name: "הלכה ושו״ת", slug: "halacha", icon: Scale, color: "bg-navy/5" },
   { name: "מוסר והשקפה", slug: "mussar", icon: Heart, color: "bg-accent/10" },
   { name: "חסידות וקבלה", slug: "chassidut", icon: Sparkles, color: "bg-navy/5" },
+  { name: "סת״ם — תפילין, מזוזות, מגילות", slug: "stam-department", icon: ScrollText, color: "bg-accent/15" },
 ];
 
 const CategoryGrid = () => {
