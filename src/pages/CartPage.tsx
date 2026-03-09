@@ -4,6 +4,7 @@ import Footer from "@/components/storefront/Footer";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
+import CrossSellWidget from "@/components/storefront/CrossSellWidget";
 
 const CartPage = () => {
   const { items, removeItem, updateQuantity, subtotal, totalItems } = useCart();
@@ -122,6 +123,9 @@ const CartPage = () => {
             </Link>
           </div>
         </div>
+
+        {/* Cross-sell */}
+        <CrossSellWidget productIds={items.map(i => i.productId)} />
       </main>
       <Footer />
     </div>

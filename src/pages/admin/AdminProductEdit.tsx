@@ -6,6 +6,7 @@ import ProductImageManager from "@/components/admin/ProductImageManager";
 import ProductCategoryManager from "@/components/admin/ProductCategoryManager";
 import ProductVariantManager from "@/components/admin/ProductVariantManager";
 import StamAttributesEditor from "@/components/admin/StamAttributesEditor";
+import ProductBadgeManager from "@/components/admin/ProductBadgeManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -123,6 +124,7 @@ const AdminProductEdit = () => {
         {savedProductId && <ProductImageManager productId={savedProductId} />}
         {savedProductId && <ProductVariantManager productId={savedProductId} />}
         {savedProductId && <StamAttributesEditor productId={savedProductId} />}
+        {savedProductId && <ProductBadgeManager productId={savedProductId} />}
 
         <div className="flex gap-3">
           <Button type="submit" variant="gold" className="gap-2" disabled={saveMutation.isPending}>
