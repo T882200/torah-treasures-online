@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/contexts/CartContext";
 import { ShoppingCart, ChevronLeft, Minus, Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import StamAttributesDisplay from "@/components/storefront/StamAttributesDisplay";
 import SEOHead from "@/components/storefront/SEOHead";
+import RecentlyViewed, { trackRecentlyViewed } from "@/components/storefront/RecentlyViewed";
+import ProductReviews from "@/components/storefront/ProductReviews";
 
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
