@@ -6,6 +6,7 @@ import ProductImageManager from "@/components/admin/ProductImageManager";
 import ProductCategoryManager from "@/components/admin/ProductCategoryManager";
 import ProductVariantManager from "@/components/admin/ProductVariantManager";
 import StamAttributesEditor from "@/components/admin/StamAttributesEditor";
+import ProductBadgeManager from "@/components/admin/ProductBadgeManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
