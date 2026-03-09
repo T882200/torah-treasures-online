@@ -39,15 +39,34 @@ const CategoryPage = () => {
     enabled: !!slug,
   });
 
+  // Get price bounds for filter
+  const { data: priceBounds } = useQuery({
+    queryKey: ["category-price-bounds", category?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("price, product_categories!inner(category_id)")
+        .eq("is_active", true)
+        .eq("product_categories.category_id", category!.id)
+        .order("price", { ascending: true });
+      if (error) throw error;
+      if (!data || data.length === 0) return { min: 0, max: 1000 };
+      return { min: Math.floor(Number(data[0].price)), max: Math.ceil(Number(data[data.length - 1].price)) };
+    },
+    enabled: !!category,
+  });
+
   // Count query for pagination
   const { data: totalCount } = useQuery({
-    queryKey: ["category-count", slug, inStockOnly, category?.id],
+    queryKey: ["category-count", slug, inStockOnly, category?.id, priceRange],
     queryFn: async () => {
       let query = supabase
         .from("products")
         .select("id, product_categories!inner(category_id)", { count: "exact", head: true })
         .eq("is_active", true)
-        .eq("product_categories.category_id", category!.id);
+        .eq("product_categories.category_id", category!.id)
+        .gte("price", priceRange[0])
+        .lte("price", priceRange[1]);
       if (inStockOnly) query = query.gt("stock", 0);
       const { count, error } = await query;
       if (error) throw error;
