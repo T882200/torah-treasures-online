@@ -137,7 +137,7 @@ const CategoryPage = () => {
         </h1>
 
         {/* Filters Bar */}
-        <div className="flex flex-wrap items-center gap-4 mb-8 py-4 border-b border-border">
+        <div className="flex flex-wrap items-center gap-4 mb-4 py-4 border-b border-border">
           <Select value={sort} onValueChange={(v) => { setSort(v as SortOption); setPage(0); }}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="מיון" />
@@ -147,6 +147,7 @@ const CategoryPage = () => {
               <SelectItem value="price_asc">מחיר: נמוך לגבוה</SelectItem>
               <SelectItem value="price_desc">מחיר: גבוה לנמוך</SelectItem>
               <SelectItem value="name">שם</SelectItem>
+              <SelectItem value="rating">דירוג</SelectItem>
             </SelectContent>
           </Select>
 
@@ -155,12 +156,35 @@ const CategoryPage = () => {
             <Label htmlFor="in-stock" className="text-sm">במלאי בלבד</Label>
           </div>
 
+          <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowFilters(f => !f)}>
+            <SlidersHorizontal className="h-4 w-4" />
+            פילטרים
+          </Button>
+
           {totalCount !== undefined && (
             <span className="text-sm text-muted-foreground mr-auto">
               {totalCount} מוצרים
             </span>
           )}
         </div>
+
+        {/* Advanced Filters */}
+        {showFilters && priceBounds && (
+          <div className="bg-muted/50 rounded-lg p-4 mb-6 space-y-3">
+            <Label className="text-sm font-medium">טווח מחירים</Label>
+            <Slider
+              min={priceBounds.min}
+              max={priceBounds.max}
+              step={1}
+              value={priceRange}
+              onValueChange={(v) => { setPriceRange(v as [number, number]); setPage(0); }}
+            />
+            <div className="flex justify-between text-xs text-muted-foreground" dir="ltr">
+              <span>₪{priceRange[0]}</span>
+              <span>₪{priceRange[1]}</span>
+            </div>
+          </div>
+        )}
 
         {/* Product Grid */}
         {isLoading ? (
