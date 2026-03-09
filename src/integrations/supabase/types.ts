@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      abandoned_carts: {
+        Row: {
+          cart_data: Json
+          created_at: string | null
+          customer_id: string | null
+          email: string | null
+          id: string
+          recovered: boolean | null
+          reminder_sent_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cart_data: Json
+          created_at?: string | null
+          customer_id?: string | null
+          email?: string | null
+          id?: string
+          recovered?: boolean | null
+          reminder_sent_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cart_data?: Json
+          created_at?: string | null
+          customer_id?: string | null
+          email?: string | null
+          id?: string
+          recovered?: boolean | null
+          reminder_sent_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abandoned_carts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           id: string
@@ -395,6 +436,35 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      low_stock_notifications: {
+        Row: {
+          id: string
+          notified_at: string | null
+          product_id: string
+          stock_level: number
+        }
+        Insert: {
+          id?: string
+          notified_at?: string | null
+          product_id: string
+          stock_level: number
+        }
+        Update: {
+          id?: string
+          notified_at?: string | null
+          product_id?: string
+          stock_level?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "low_stock_notifications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       market_research_results: {
         Row: {
@@ -799,6 +869,102 @@ export type Database = {
           },
         ]
       }
+      product_relations: {
+        Row: {
+          id: string
+          position: number | null
+          product_id: string
+          related_product_id: string
+          relation_type: string
+        }
+        Insert: {
+          id?: string
+          position?: number | null
+          product_id: string
+          related_product_id: string
+          relation_type?: string
+        }
+        Update: {
+          id?: string
+          position?: number | null
+          product_id?: string
+          related_product_id?: string
+          relation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_relations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_relations_related_product_id_fkey"
+            columns: ["related_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_reviews: {
+        Row: {
+          author_name: string
+          content: string | null
+          created_at: string | null
+          customer_id: string | null
+          id: string
+          is_approved: boolean | null
+          is_verified_purchase: boolean | null
+          product_id: string
+          rating: number
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          author_name: string
+          content?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          is_approved?: boolean | null
+          is_verified_purchase?: boolean | null
+          product_id: string
+          rating?: number
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          author_name?: string
+          content?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          is_approved?: boolean | null
+          is_verified_purchase?: boolean | null
+          product_id?: string
+          rating?: number
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variants: {
         Row: {
           barcode: string | null
@@ -845,6 +1011,7 @@ export type Database = {
       }
       products: {
         Row: {
+          avg_rating: number | null
           barcode: string | null
           catalog_number: string | null
           created_at: string | null
@@ -852,15 +1019,18 @@ export type Database = {
           id: string
           in_stock: boolean | null
           is_active: boolean | null
+          low_stock_threshold: number | null
           name: string
           parent_id: string | null
           price: number
           price_raw: number | null
+          review_count: number | null
           slug: string
           stock: number | null
           updated_at: string | null
         }
         Insert: {
+          avg_rating?: number | null
           barcode?: string | null
           catalog_number?: string | null
           created_at?: string | null
@@ -868,15 +1038,18 @@ export type Database = {
           id?: string
           in_stock?: boolean | null
           is_active?: boolean | null
+          low_stock_threshold?: number | null
           name: string
           parent_id?: string | null
           price: number
           price_raw?: number | null
+          review_count?: number | null
           slug: string
           stock?: number | null
           updated_at?: string | null
         }
         Update: {
+          avg_rating?: number | null
           barcode?: string | null
           catalog_number?: string | null
           created_at?: string | null
@@ -884,10 +1057,12 @@ export type Database = {
           id?: string
           in_stock?: boolean | null
           is_active?: boolean | null
+          low_stock_threshold?: number | null
           name?: string
           parent_id?: string | null
           price?: number
           price_raw?: number | null
+          review_count?: number | null
           slug?: string
           stock?: number | null
           updated_at?: string | null
@@ -1050,6 +1225,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      wishlists: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlists_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

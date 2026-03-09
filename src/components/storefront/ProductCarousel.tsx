@@ -17,7 +17,9 @@ interface ProductCarouselProps {
   }>;
 }
 
-const ProductCarousel = ({ title, products }: ProductCarouselProps) => {
+import { forwardRef } from "react";
+
+const ProductCarousel = forwardRef<HTMLElement, ProductCarouselProps>(({ title, products }, ref) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
@@ -28,7 +30,7 @@ const ProductCarousel = ({ title, products }: ProductCarouselProps) => {
   };
 
   return (
-    <section className="py-12">
+    <section ref={ref} className="py-12">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">
@@ -65,6 +67,8 @@ const ProductCarousel = ({ title, products }: ProductCarouselProps) => {
       </div>
     </section>
   );
-};
+});
+
+ProductCarousel.displayName = "ProductCarousel";
 
 export default ProductCarousel;

@@ -14,13 +14,15 @@ interface ProductCardProps {
   inStock?: boolean;
 }
 
-const ProductCard = ({ id, name, slug, price, priceRaw, imageUrl, inStock = true }: ProductCardProps) => {
+import { forwardRef } from "react";
+
+const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ id, name, slug, price, priceRaw, imageUrl, inStock = true }, ref) => {
   const { addItem } = useCart();
   const formattedPrice = `₪${price.toFixed(2)}`;
   const formattedRawPrice = priceRaw ? `₪${priceRaw.toFixed(2)}` : null;
 
   return (
-    <Link to={`/product/${slug}`} className="group block">
+    <Link ref={ref} to={`/product/${slug}`} className="group block">
       <div className="bg-card rounded-lg overflow-hidden shadow-card hover:shadow-elegant transition-all duration-300 border border-border">
         <div className="aspect-[3/4] bg-muted overflow-hidden relative">
           <ProductBadges productId={id} />
@@ -70,7 +72,9 @@ const ProductCard = ({ id, name, slug, price, priceRaw, imageUrl, inStock = true
       </div>
     </Link>
   );
-};
+});
+
+ProductCard.displayName = "ProductCard";
 
 const BookPlaceholder = () => (
   <svg className="h-16 w-12 text-muted-foreground/40" viewBox="0 0 48 64" fill="none" stroke="currentColor" strokeWidth="2">
