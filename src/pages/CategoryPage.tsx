@@ -76,7 +76,7 @@ const CategoryPage = () => {
   });
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["category-products", slug, sort, inStockOnly, page, category?.id],
+    queryKey: ["category-products", slug, sort, inStockOnly, page, category?.id, priceRange],
     queryFn: async () => {
       let query = supabase
         .from("products")
@@ -87,6 +87,8 @@ const CategoryPage = () => {
         `)
         .eq("is_active", true)
         .eq("product_categories.category_id", category!.id)
+        .gte("price", priceRange[0])
+        .lte("price", priceRange[1])
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       if (inStockOnly) query = query.gt("stock", 0);
@@ -95,6 +97,7 @@ const CategoryPage = () => {
         case "price_asc": query = query.order("price", { ascending: true }); break;
         case "price_desc": query = query.order("price", { ascending: false }); break;
         case "name": query = query.order("name", { ascending: true }); break;
+        case "rating": query = query.order("avg_rating", { ascending: false }); break;
         default: query = query.order("created_at", { ascending: false });
       }
 
