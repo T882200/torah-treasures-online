@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 
-type SortOption = "newest" | "price_asc" | "price_desc" | "name";
+type SortOption = "newest" | "price_asc" | "price_desc" | "name" | "rating";
 const PAGE_SIZE = 24;
 
 const CategoryPage = () => {
@@ -21,6 +22,8 @@ const CategoryPage = () => {
   const [sort, setSort] = useState<SortOption>("newest");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [page, setPage] = useState(0);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [showFilters, setShowFilters] = useState(false);
 
   const { data: category } = useQuery({
     queryKey: ["category", slug],
