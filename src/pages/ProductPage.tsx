@@ -248,6 +248,12 @@ const ProductPage = () => {
             <StamAttributesDisplay productId={product.id} />
           </div>
         </div>
+
+        {/* Reviews */}
+        <ProductReviews productId={product.id} />
+
+        {/* Recently Viewed */}
+        <RecentlyViewed currentProductId={product.id} />
       </main>
       <Footer />
     </div>

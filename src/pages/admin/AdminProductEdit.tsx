@@ -124,6 +124,7 @@ const AdminProductEdit = () => {
         {savedProductId && <ProductImageManager productId={savedProductId} />}
         {savedProductId && <ProductVariantManager productId={savedProductId} />}
         {savedProductId && <StamAttributesEditor productId={savedProductId} />}
+        {savedProductId && <ProductBadgeManager productId={savedProductId} />}
 
         <div className="flex gap-3">
           <Button type="submit" variant="gold" className="gap-2" disabled={saveMutation.isPending}>
