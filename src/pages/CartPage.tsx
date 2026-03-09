@@ -123,6 +123,9 @@ const CartPage = () => {
             </Link>
           </div>
         </div>
+
+        {/* Cross-sell */}
+        <CrossSellWidget productIds={items.map(i => i.productId)} />
       </main>
       <Footer />
     </div>
