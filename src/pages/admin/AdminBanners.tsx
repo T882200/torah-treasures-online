@@ -10,10 +10,12 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Trash2, GripVertical, Image as ImageIcon } from "lucide-react";
+import ImageLibraryDialog from "@/components/admin/ImageLibraryDialog";
 
 const AdminBanners = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [form, setForm] = useState({
     title: "",
     subtitle: "",
@@ -127,21 +129,40 @@ const AdminBanners = () => {
                 </div>
                 <div>
                   <Label>תמונת רקע (אופציונלי)</Label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        try {
-                          const url = await uploadBannerImage(file);
-                          setForm({ ...form, image_url: url });
-                        } catch {
-                          toast.error("שגיאה בהעלאה");
-                        }
-                      }
-                    }}
-                  />
+                  <div className="flex items-center gap-2 mt-1">
+                    <label className="cursor-pointer">
+                      <div className="flex items-center gap-2 px-3 py-2 border rounded-md hover:bg-muted text-sm">
+                        <Plus className="h-4 w-4" />
+                        העלה תמונה
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              const url = await uploadBannerImage(file);
+                              setForm({ ...form, image_url: url });
+                            } catch {
+                              toast.error("שגיאה בהעלאה");
+                            }
+                          }
+                        }}
+                      />
+                    </label>
+                    <Button type="button" variant="outline" size="sm" className="gap-1" onClick={() => setLibraryOpen(true)}>
+                      <ImageIcon className="h-4 w-4" />
+                      מספרייה
+                    </Button>
+                    <ImageLibraryDialog
+                      open={libraryOpen}
+                      onOpenChange={setLibraryOpen}
+                      onSelect={(urls) => setForm({ ...form, image_url: urls[0] })}
+                      uploadBucket="banners"
+                    />
+                  </div>
                 </div>
                 {/* Preview */}
                 <div

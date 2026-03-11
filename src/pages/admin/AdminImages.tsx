@@ -5,14 +5,15 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
-  Upload, Search, Image as ImageIcon, X, Check, Download, Film,
+  Upload, Search, Image as ImageIcon, X, Check, Download,
   CheckSquare, Square, Loader2,
 } from "lucide-react";
+import { useStorageLibrary } from "@/hooks/useStorageLibrary";
+import { STORAGE_BUCKETS, type StorageFile } from "@/lib/storage";
 
 // ────────────────────────────────────────────
 // Types
@@ -21,15 +22,6 @@ interface UploadPreview {
   file: File;
   url: string; // local blob URL
   status: "pending" | "uploading" | "done" | "error";
-}
-
-interface StoredImage {
-  id: string;
-  product_id: string | null;
-  url: string;
-  alt_text: string | null;
-  position: number | null;
-  is_video: boolean | null;
 }
 
 // ────────────────────────────────────────────
@@ -119,21 +111,7 @@ const UploadTab = () => {
           .upload(filePath, file);
         if (upErr) throw upErr;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from("product-images")
-          .getPublicUrl(filePath);
-
-        // Insert unassociated image (no product_id)
-        const { error: dbErr } = await supabase.from("product_images").insert({
-          product_id: null as any, // will be associated later
-          url: publicUrl,
-          position: 0,
-          alt_text: file.name.replace(/\.[^.]+$/, ""),
-          is_video: false,
-        });
-        // If FK constraint forbids null product_id, we skip the DB row and it only lives in storage
-        // The library tab will list from storage bucket directly
-
+        // Image lives in storage only — the library tab lists directly from storage buckets
         updated[i] = { ...updated[i], status: "done" };
       } catch {
         updated[i] = { ...updated[i], status: "error" };
@@ -144,7 +122,7 @@ const UploadTab = () => {
     }
 
     setUploading(false);
-    queryClient.invalidateQueries({ queryKey: ["image-library"] });
+    queryClient.invalidateQueries({ queryKey: ["storage-library"] });
     toast.success(`הועלו ${updated.filter(u => u.status === "done").length} תמונות`);
   };
 
@@ -230,26 +208,18 @@ const UploadTab = () => {
 };
 
 // ────────────────────────────────────────────
-// Tab 2 — Image Library (from product_images table)
+// Tab 2 — Image Library (from Supabase Storage buckets)
 // ────────────────────────────────────────────
 const LibraryTab = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assignProduct, setAssignProduct] = useState("");
+  const [activeBuckets, setActiveBuckets] = useState<Set<string>>(
+    new Set(STORAGE_BUCKETS.map((b) => b.name)),
+  );
 
-  const { data: images, isLoading } = useQuery({
-    queryKey: ["image-library"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_images")
-        .select("*, products:product_id(id, name)")
-        .order("id", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data as (StoredImage & { products: { id: string; name: string } | null })[];
-    },
-  });
+  const { data: files, isLoading } = useStorageLibrary();
 
   const { data: products } = useQuery({
     queryKey: ["all-products-for-assign"],
@@ -267,7 +237,6 @@ const LibraryTab = () => {
   const bulkAssign = useMutation({
     mutationFn: async () => {
       if (!assignProduct || selected.size === 0) return;
-      // Get current max position for this product
       const { data: existing } = await supabase
         .from("product_images")
         .select("position")
@@ -276,14 +245,18 @@ const LibraryTab = () => {
         .limit(1);
       let pos = (existing?.[0]?.position ?? -1) + 1;
 
-      for (const imgId of selected) {
-        await supabase.from("product_images")
-          .update({ product_id: assignProduct, position: pos++ })
-          .eq("id", imgId);
+      for (const url of selected) {
+        await supabase.from("product_images").insert({
+          product_id: assignProduct,
+          url,
+          position: pos++,
+          is_video: false,
+        });
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["image-library"] });
+      queryClient.invalidateQueries({ queryKey: ["storage-library"] });
+      queryClient.invalidateQueries({ queryKey: ["product-images"] });
       setSelected(new Set());
       setAssignProduct("");
       toast.success("התמונות שויכו למוצר");
@@ -291,44 +264,66 @@ const LibraryTab = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const toggleSelect = (id: string) => {
-    setSelected(prev => {
+  const toggleSelect = (url: string) => {
+    setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      next.has(url) ? next.delete(url) : next.add(url);
       return next;
     });
   };
 
+  const filteredFiles = () => {
+    if (!files) return [];
+    return files.filter((f) => {
+      if (!activeBuckets.has(f.bucket)) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        if (!f.name.toLowerCase().includes(q) && !f.fullPath.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  };
+
+  const filtered = filteredFiles();
+
   const selectAll = () => {
-    if (!images) return;
-    const filtered = filteredImages();
     if (selected.size === filtered.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(filtered.map(i => i.id)));
+      setSelected(new Set(filtered.map((f) => f.publicUrl)));
     }
   };
 
-  const filteredImages = () => {
-    if (!images) return [];
-    if (!search) return images;
-    const q = search.toLowerCase();
-    return images.filter(i =>
-      (i.alt_text || "").toLowerCase().includes(q) ||
-      (i.url || "").toLowerCase().includes(q) ||
-      (i.products?.name || "").toLowerCase().includes(q)
-    );
+  const toggleBucket = (name: string) => {
+    setActiveBuckets((prev) => {
+      const next = new Set(prev);
+      if (next.has(name) && next.size > 1) next.delete(name);
+      else next.add(name);
+      return next;
+    });
   };
-
-  const filtered = filteredImages();
 
   return (
     <div className="space-y-4">
+      {/* Search + bucket filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="חפש לפי שם קובץ או מוצר..." value={search} onChange={e => setSearch(e.target.value)} className="pr-9" />
+          <Input placeholder="חפש לפי שם קובץ..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
         </div>
+        {STORAGE_BUCKETS.map((b) => (
+          <button
+            key={b.name}
+            onClick={() => toggleBucket(b.name)}
+            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              activeBuckets.has(b.name)
+                ? "bg-accent/20 border-accent text-accent-foreground"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            {b.label}
+          </button>
+        ))}
         <Button variant="outline" size="sm" onClick={selectAll}>
           {selected.size === filtered.length && filtered.length > 0 ? <CheckSquare className="h-4 w-4 ml-1" /> : <Square className="h-4 w-4 ml-1" />}
           {selected.size > 0 ? `${selected.size} נבחרו` : "בחר הכל"}
@@ -342,7 +337,7 @@ const LibraryTab = () => {
           <Select value={assignProduct} onValueChange={setAssignProduct}>
             <SelectTrigger className="max-w-xs"><SelectValue placeholder="בחר מוצר לשיוך..." /></SelectTrigger>
             <SelectContent>
-              {products?.map(p => (
+              {products?.map((p) => (
                 <SelectItem key={p.id} value={p.id}>{p.name} {p.catalog_number ? `(${p.catalog_number})` : ""}</SelectItem>
               ))}
             </SelectContent>
@@ -354,26 +349,28 @@ const LibraryTab = () => {
       )}
 
       {isLoading ? (
-        <p className="text-muted-foreground">טוען...</p>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-          {filtered.map(img => {
-            const isSelected = selected.has(img.id);
+          {filtered.map((file) => {
+            const isSelected = selected.has(file.publicUrl);
             return (
               <div
-                key={img.id}
+                key={file.id}
                 className={`relative group aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-colors ${
                   isSelected ? "border-accent ring-2 ring-accent/30" : "border-border"
                 }`}
-                onClick={() => toggleSelect(img.id)}
+                onClick={() => toggleSelect(file.publicUrl)}
               >
-                <img src={img.url} alt={img.alt_text || ""} className="w-full h-full object-cover" />
+                <img src={file.publicUrl} alt={file.name} className="w-full h-full object-cover" loading="lazy" />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
-                  <p className="text-[10px] text-white truncate">{img.alt_text || "—"}</p>
-                  {img.products?.name && (
-                    <p className="text-[9px] text-accent truncate">🔗 {img.products.name}</p>
-                  )}
+                  <p className="text-[10px] text-white truncate">{file.name}</p>
                 </div>
+                <span className="absolute top-1 left-1 text-[8px] bg-black/50 text-white px-1 py-0.5 rounded">
+                  {STORAGE_BUCKETS.find((b) => b.name === file.bucket)?.label ?? file.bucket}
+                </span>
                 <div className={`absolute top-1 right-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
                   isSelected ? "bg-accent border-accent text-white" : "border-white/80 bg-black/20"
                 }`}>

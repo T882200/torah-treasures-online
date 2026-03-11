@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, FolderOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, FolderOpen, Image as ImageIcon } from "lucide-react";
+import ImageLibraryDialog from "@/components/admin/ImageLibraryDialog";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ const AdminCategories = () => {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", image_url: "", position: 0 });
 
   const { data: categories, isLoading } = useQuery({
@@ -117,11 +119,31 @@ const AdminCategories = () => {
                 {form.image_url && (
                   <img src={form.image_url} alt="" className="w-20 h-20 rounded object-cover mb-2" />
                 )}
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
-                />
+                <div className="flex items-center gap-2 mt-1">
+                  <label className="cursor-pointer">
+                    <div className="flex items-center gap-2 px-3 py-2 border rounded-md hover:bg-muted text-sm">
+                      <Upload className="h-4 w-4" />
+                      העלה תמונה
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+                    />
+                  </label>
+                  <Button type="button" variant="outline" size="sm" className="gap-1" onClick={() => setLibraryOpen(true)}>
+                    <ImageIcon className="h-4 w-4" />
+                    מספרייה
+                  </Button>
+                  <ImageLibraryDialog
+                    open={libraryOpen}
+                    onOpenChange={setLibraryOpen}
+                    onSelect={(urls) => setForm(prev => ({ ...prev, image_url: urls[0] }))}
+                    uploadBucket="category-images"
+                    uploadPath="categories"
+                  />
+                </div>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={resetForm}>ביטול</Button>

@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Trash2, Tag, Image as ImageIcon } from "lucide-react";
+import ImageLibraryDialog from "@/components/admin/ImageLibraryDialog";
 
 const CORNERS = [
   { value: "top-right", label: "ימין עליון" },
@@ -22,6 +23,7 @@ const CORNERS = [
 const AdminBadges = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
     type: "text" as "text" | "image",
@@ -150,22 +152,41 @@ const AdminBadges = () => {
                 ) : (
                   <div>
                     <Label>תמונת תגית (PNG שקוף)</Label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          try {
-                            const url = await uploadBadgeImage(file);
-                            setForm({ ...form, image_url: url });
-                            toast.success("תמונה הועלתה");
-                          } catch {
-                            toast.error("שגיאה בהעלאה");
-                          }
-                        }
-                      }}
-                    />
+                    <div className="flex items-center gap-2 mt-1">
+                      <label className="cursor-pointer">
+                        <div className="flex items-center gap-2 px-3 py-2 border rounded-md hover:bg-muted text-sm">
+                          <Plus className="h-4 w-4" />
+                          העלה תמונה
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                const url = await uploadBadgeImage(file);
+                                setForm({ ...form, image_url: url });
+                                toast.success("תמונה הועלתה");
+                              } catch {
+                                toast.error("שגיאה בהעלאה");
+                              }
+                            }
+                          }}
+                        />
+                      </label>
+                      <Button type="button" variant="outline" size="sm" className="gap-1" onClick={() => setLibraryOpen(true)}>
+                        <ImageIcon className="h-4 w-4" />
+                        מספרייה
+                      </Button>
+                      <ImageLibraryDialog
+                        open={libraryOpen}
+                        onOpenChange={setLibraryOpen}
+                        onSelect={(urls) => setForm({ ...form, image_url: urls[0] })}
+                        uploadBucket="badges"
+                      />
+                    </div>
                     {form.image_url && <img src={form.image_url} alt="" className="h-16 mt-2" />}
                   </div>
                 )}

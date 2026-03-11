@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Plus, Trash2, GripVertical, Eye, ArrowUp, ArrowDown, Settings, Upload, X } from "lucide-react";
+import { Plus, Trash2, GripVertical, Eye, ArrowUp, ArrowDown, Settings, Upload, X, Image as ImageIcon } from "lucide-react";
+import ImageLibraryDialog from "@/components/admin/ImageLibraryDialog";
 
 const SECTION_TYPES = [
   { value: "hero", label: "באנר ראשי (Hero)", icon: "🖼️" },
@@ -349,6 +350,7 @@ const AdminHomepage = () => {
 // ── Hero config with image upload ──
 const HeroConfigEditor = ({ section, config, updateConfig }: { section: any; config: any; updateConfig: any }) => {
   const [uploading, setUploading] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const handleImageUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -387,6 +389,17 @@ const HeroConfigEditor = ({ section, config, updateConfig }: { section: any; con
             </div>
             <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e.target.files)} disabled={uploading} />
           </label>
+          <Button type="button" variant="outline" size="sm" className="gap-1" onClick={() => setLibraryOpen(true)}>
+            <ImageIcon className="h-4 w-4" />
+            מספרייה
+          </Button>
+          <ImageLibraryDialog
+            open={libraryOpen}
+            onOpenChange={setLibraryOpen}
+            onSelect={(urls) => updateConfig(section.id, config, "image_url", urls[0])}
+            uploadBucket="banners"
+            uploadPath={`homepage/${section.id}`}
+          />
         </div>
         <div className="mt-2">
           <Label className="text-xs text-muted-foreground">או הכנס URL ידנית</Label>
@@ -532,6 +545,7 @@ const BannerSliderConfigEditor = ({ section, config, updateConfig }: { section: 
 // ── Image+text config with image upload ──
 const ImageTextConfigEditor = ({ section, config, updateConfig }: { section: any; config: any; updateConfig: any }) => {
   const [uploading, setUploading] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const handleImageUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -572,6 +586,17 @@ const ImageTextConfigEditor = ({ section, config, updateConfig }: { section: any
             </div>
             <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e.target.files)} disabled={uploading} />
           </label>
+          <Button type="button" variant="outline" size="sm" className="gap-1" onClick={() => setLibraryOpen(true)}>
+            <ImageIcon className="h-4 w-4" />
+            מספרייה
+          </Button>
+          <ImageLibraryDialog
+            open={libraryOpen}
+            onOpenChange={setLibraryOpen}
+            onSelect={(urls) => updateConfig(section.id, config, "image_url", urls[0])}
+            uploadBucket="banners"
+            uploadPath={`homepage/${section.id}`}
+          />
         </div>
         <Input className="mt-2" defaultValue={config.image_url} placeholder="או הכנס URL..." onBlur={(e) => updateConfig(section.id, config, "image_url", e.target.value)} />
       </div>

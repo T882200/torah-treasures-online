@@ -2,8 +2,9 @@ import { useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Upload, X, GripVertical } from "lucide-react";
+import { Upload, X, GripVertical, Image as ImageIcon } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import ImageLibraryDialog from "@/components/admin/ImageLibraryDialog";
 
 interface ProductImageManagerProps {
   productId: string;
@@ -12,6 +13,7 @@ interface ProductImageManagerProps {
 const ProductImageManager = ({ productId }: ProductImageManagerProps) => {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const { data: images } = useQuery({
     queryKey: ["product-images", productId],
@@ -82,6 +84,24 @@ const ProductImageManager = ({ productId }: ProductImageManagerProps) => {
     handleUpload(e.dataTransfer.files);
   }, [handleUpload]);
 
+  const handleLibrarySelect = useCallback(async (urls: string[]) => {
+    const currentCount = images?.length || 0;
+    let pos = currentCount;
+    for (const url of urls) {
+      const { error } = await supabase.from("product_images").insert({
+        product_id: productId,
+        url,
+        position: pos++,
+        is_video: false,
+      });
+      if (error) {
+        toast.error(`שגיאה בשיוך תמונה: ${error.message}`);
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["product-images", productId] });
+    toast.success(`${urls.length} תמונות שויכו למוצר`);
+  }, [productId, images, queryClient]);
+
   return (
     <div className="bg-card rounded-lg border border-border p-6 shadow-card space-y-4">
       <h2 className="font-display font-bold text-lg">תמונות</h2>
@@ -130,6 +150,26 @@ const ProductImageManager = ({ productId }: ProductImageManagerProps) => {
         </p>
         <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP, MP4</p>
       </div>
+
+      {/* Pick from library */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-2"
+        onClick={() => setLibraryOpen(true)}
+      >
+        <ImageIcon className="h-4 w-4" />
+        בחר מספריית התמונות
+      </Button>
+
+      <ImageLibraryDialog
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        onSelect={handleLibrarySelect}
+        multiple={true}
+        uploadBucket="product-images"
+        uploadPath={productId}
+      />
     </div>
   );
 };
