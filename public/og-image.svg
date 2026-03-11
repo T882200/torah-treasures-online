@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1f3a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2a3158;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <text x="600" y="260" text-anchor="middle" font-family="serif" font-size="96" font-weight="bold" fill="#c5a572">יהודיקה</text>
+  <text x="600" y="360" text-anchor="middle" font-family="sans-serif" font-size="36" fill="#e0e0e0">ספרי קודש ויודאיקה</text>
+  <text x="600" y="430" text-anchor="middle" font-family="sans-serif" font-size="24" fill="#a0a0a0">www.yehudaica.net</text>
+  <line x1="400" y1="390" x2="800" y2="390" stroke="#c5a572" stroke-width="2" opacity="0.5" />
+</svg>

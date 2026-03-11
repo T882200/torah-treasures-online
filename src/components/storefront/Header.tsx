@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import GlobalSearch from "./GlobalSearch";
 import {
   DropdownMenu,
@@ -18,6 +20,22 @@ const Header = () => {
   const { totalItems } = useCart();
   const { user, isAdmin, signOut } = useAuth();
 
+  const { data: categories } = useQuery({
+    queryKey: ["header-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, slug, position")
+        .is("parent_id", null)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const navCategories = categories || [];
+
   return (
     <header className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-elegant">
       <div className="container mx-auto px-4">
@@ -27,11 +45,11 @@ const Header = () => {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6 font-body text-sm">
-            <Link to="/category/torah" className="hover:text-accent transition-colors">תורה</Link>
-            <Link to="/category/halacha" className="hover:text-accent transition-colors">הלכה</Link>
-            <Link to="/category/mussar" className="hover:text-accent transition-colors">מוסר</Link>
-            <Link to="/category/chassidut" className="hover:text-accent transition-colors">חסידות</Link>
-            <Link to="/category/kids" className="hover:text-accent transition-colors">ילדים</Link>
+            {navCategories.map((cat) => (
+              <Link key={cat.id} to={`/category/${cat.slug}`} className="hover:text-accent transition-colors">
+                {cat.name}
+              </Link>
+            ))}
           </nav>
 
           <div className="flex items-center gap-1">
@@ -94,11 +112,16 @@ const Header = () => {
 
         {mobileMenuOpen && (
           <nav className="md:hidden pb-4 flex flex-col gap-2 font-body text-sm border-t border-primary-foreground/20 pt-3">
-            <Link to="/category/torah" className="py-2 hover:text-accent transition-colors">תורה</Link>
-            <Link to="/category/halacha" className="py-2 hover:text-accent transition-colors">הלכה</Link>
-            <Link to="/category/mussar" className="py-2 hover:text-accent transition-colors">מוסר</Link>
-            <Link to="/category/chassidut" className="py-2 hover:text-accent transition-colors">חסידות</Link>
-            <Link to="/category/kids" className="py-2 hover:text-accent transition-colors">ילדים</Link>
+            {navCategories.map((cat) => (
+              <Link
+                key={cat.id}
+                to={`/category/${cat.slug}`}
+                className="py-2 hover:text-accent transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {cat.name}
+              </Link>
+            ))}
           </nav>
         )}
       </div>

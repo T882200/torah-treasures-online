@@ -3,10 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import heroImage from "@/assets/hero-books.jpg";
+import heroFallback from "@/assets/hero-books.jpg";
 import CategoryGrid from "./CategoryGrid";
 import ProductCarousel from "./ProductCarousel";
 import NewsletterSignup from "./NewsletterSignup";
+import FeaturedProductsSection from "./FeaturedProductsSection";
+import VideoSection from "./VideoSection";
+import BannerSlider from "./BannerSlider";
 
 const DynamicHomepage = () => {
   const { data: sections } = useQuery({
@@ -56,41 +59,51 @@ const SectionRenderer = ({ section }: { section: any }) => {
       return <TrustBadgesSection config={config} />;
     case "testimonials":
       return <TestimonialsSection config={config} />;
+    case "featured_products":
+      return <FeaturedProductsSection title={section.title} config={config} />;
+    case "video":
+      return <VideoSection config={config} />;
+    case "banner_slider":
+      return <BannerSlider config={config} />;
     default:
       return null;
   }
 };
 
-const HeroSection = ({ config }: { config: any }) => (
-  <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
-    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }} />
-    <div className="absolute inset-0 bg-gradient-to-l from-primary/90 via-primary/70 to-primary/40" />
-    <div className="relative container mx-auto px-4 h-full flex items-center">
-      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-lg">
-        <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-4">
-          {config.heading || "ברוכים הבאים"}
-        </h1>
-        <p className="text-primary-foreground/80 text-lg md:text-xl mb-8 font-body leading-relaxed">
-          {config.subheading || ""}
-        </p>
-        <div className="flex gap-4">
-          {config.cta_text && (
-            <Link to={config.cta_link || "/"}>
-              <Button variant="hero" size="lg">{config.cta_text}</Button>
-            </Link>
-          )}
-          {config.cta2_text && (
-            <Link to={config.cta2_link || "/"}>
-              <Button variant="navyOutline" size="lg" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
-                {config.cta2_text}
-              </Button>
-            </Link>
-          )}
-        </div>
-      </motion.div>
-    </div>
-  </section>
-);
+const HeroSection = ({ config }: { config: any }) => {
+  const bgImage = config.image_url || heroFallback;
+
+  return (
+    <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})` }} />
+      <div className="absolute inset-0 bg-gradient-to-l from-primary/90 via-primary/70 to-primary/40" />
+      <div className="relative container mx-auto px-4 h-full flex items-center">
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-lg">
+          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-4">
+            {config.heading || "ברוכים הבאים"}
+          </h1>
+          <p className="text-primary-foreground/80 text-lg md:text-xl mb-8 font-body leading-relaxed">
+            {config.subheading || ""}
+          </p>
+          <div className="flex gap-4">
+            {config.cta_text && (
+              <Link to={config.cta_link || "/"}>
+                <Button variant="hero" size="lg">{config.cta_text}</Button>
+              </Link>
+            )}
+            {config.cta2_text && (
+              <Link to={config.cta2_link || "/"}>
+                <Button variant="navyOutline" size="lg" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
+                  {config.cta2_text}
+                </Button>
+              </Link>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
 
 const CarouselSection = ({ title, config }: { title: string; config: any }) => {
   const queryType = config.query_type || "new_arrivals";
