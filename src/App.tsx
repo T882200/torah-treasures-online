@@ -35,6 +35,7 @@ import AdminFonts from "./pages/admin/AdminFonts";
 import AdminBadges from "./pages/admin/AdminBadges";
 import AdminBanners from "./pages/admin/AdminBanners";
 import AdminHomepage from "./pages/admin/AdminHomepage";
+import AdminImages from "./pages/admin/AdminImages";
 import ChatbotWidget from "./components/storefront/ChatbotWidget";
 import DynamicFontLoader from "./components/storefront/DynamicFontLoader";
 import NotFound from "./pages/NotFound";
@@ -85,6 +86,7 @@ const App = () => (
               <Route path="/admin/badges" element={<ProtectedRoute requireAdmin><AdminBadges /></ProtectedRoute>} />
               <Route path="/admin/banners" element={<ProtectedRoute requireAdmin><AdminBanners /></ProtectedRoute>} />
               <Route path="/admin/homepage" element={<ProtectedRoute requireAdmin><AdminHomepage /></ProtectedRoute>} />
+              <Route path="/admin/images" element={<ProtectedRoute requireAdmin><AdminImages /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>

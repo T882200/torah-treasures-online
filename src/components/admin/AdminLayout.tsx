@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ShoppingCart, Users, ArrowRight, Upload, MessageCircle, Mail, FolderOpen, Tag, FlaskConical, Download, Type, Badge, Image, Home } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, ArrowRight, Upload, MessageCircle, Mail, FolderOpen, Tag, FlaskConical, Download, Type, Badge, Image, Home, ImagePlus } from "lucide-react";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -12,6 +12,7 @@ const navItems = [
   { label: "מוצרים", icon: Package, href: "/admin/products" },
   { label: "קטגוריות", icon: FolderOpen, href: "/admin/categories" },
   { label: "ייבוא CSV", icon: Upload, href: "/admin/products/import" },
+  { label: "ניהול תמונות", icon: ImagePlus, href: "/admin/images" },
   { label: "הזמנות", icon: ShoppingCart, href: "/admin/orders" },
   { label: "לקוחות", icon: Users, href: "/admin/customers" },
   { label: "קופונים", icon: Tag, href: "/admin/coupons" },
