@@ -401,7 +401,9 @@ const AdminProductImport = () => {
           }
         }
 
-        // Handle image URLs (download from external URL → upload to Supabase Storage)
+        // Handle image URLs — store external URLs directly in product_images.
+        // Browser CORS blocks downloading from external domains, so we link
+        // directly to the source images instead of re-uploading to Storage.
         if (imageUrls.length > 0 && productId) {
           const { data: existingImgs } = await supabase
             .from("product_images").select("position").eq("product_id", productId)
@@ -410,19 +412,12 @@ const AdminProductImport = () => {
 
           for (const imgUrl of imageUrls) {
             try {
-              const downloaded = await downloadImageAsBlob(imgUrl.trim());
-              if (!downloaded) continue;
-              const { blob, ext } = downloaded;
-              const filePath = `${productId}/${Date.now()}-${pos}.${ext}`;
-              const { error: upErr } = await supabase.storage
-                .from("product-images")
-                .upload(filePath, blob, { contentType: getMimeFromExt(ext) });
-              if (upErr) continue;
-              const { data: { publicUrl } } = supabase.storage.from("product-images").getPublicUrl(filePath);
-              await supabase.from("product_images").insert({
-                product_id: productId, url: publicUrl, position: pos++, is_video: false,
+              const trimmed = imgUrl.trim();
+              if (!trimmed) continue;
+              const { error: insertErr } = await supabase.from("product_images").insert({
+                product_id: productId, url: trimmed, position: pos++, is_video: false,
               });
-              imagesUploaded++;
+              if (!insertErr) imagesUploaded++;
             } catch {}
           }
         }
