@@ -9,6 +9,7 @@
     "start:built": "node dist/scraper.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.99.1",
     "csv-parse": "^6.1.0",
     "csv-stringify": "^6.5.0"
   },
