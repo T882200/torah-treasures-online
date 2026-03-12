@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+
+# Scraper output & dependencies
+ATR_WEB.CSV
+ateret_scraper/node_modules
+ateret_scraper/dist

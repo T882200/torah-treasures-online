@@ -29,6 +29,7 @@ interface ColumnMappingEntry {
 const KNOWN_COLUMNS = [
   "name", "price", "stock", "price_raw", "catalog_number",
   "barcode", "description", "is_active", "category", "base64_images",
+  "image_urls", "source_url", "source_id", "attributes",
 ];
 
 const COLUMN_LABELS: Record<string, string> = {
@@ -42,6 +43,10 @@ const COLUMN_LABELS: Record<string, string> = {
   is_active: "פעיל",
   category: "קטגוריה",
   base64_images: "תמונות Base64",
+  image_urls: "תמונות URL",
+  source_url: "קישור מקור",
+  source_id: "מזהה מקור",
+  attributes: "תכונות",
 };
 
 const MAPPING_STORAGE_KEY = "csv-import-column-mappings";
@@ -104,6 +109,44 @@ function base64ToBlob(dataUri: string): { blob: Blob; ext: string } {
   const arr = new Uint8Array(byteStr.length);
   for (let i = 0; i < byteStr.length; i++) arr[i] = byteStr.charCodeAt(i);
   return { blob: new Blob([arr], { type: `image/${match[1]}` }), ext };
+}
+
+// ───────────────── Image URL helpers ─────────────────
+function getExtFromUrl(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const ext = pathname.split(".").pop()?.toLowerCase() || "jpg";
+    return ["jpg", "jpeg", "png", "webp", "gif", "svg"].includes(ext) ? (ext === "jpeg" ? "jpg" : ext) : "jpg";
+  } catch {
+    return "jpg";
+  }
+}
+
+function getMimeFromExt(ext: string): string {
+  const map: Record<string, string> = {
+    jpg: "image/jpeg", png: "image/png", webp: "image/webp",
+    gif: "image/gif", svg: "image/svg+xml",
+  };
+  return map[ext] || "image/jpeg";
+}
+
+async function downloadImageAsBlob(url: string): Promise<{ blob: Blob; ext: string } | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const contentType = res.headers.get("content-type") || "";
+    const blob = await res.blob();
+    // Determine extension from content-type or URL
+    let ext = "jpg";
+    if (contentType.includes("png")) ext = "png";
+    else if (contentType.includes("webp")) ext = "webp";
+    else if (contentType.includes("gif")) ext = "gif";
+    else if (contentType.includes("svg")) ext = "svg";
+    else ext = getExtFromUrl(url);
+    return { blob, ext };
+  } catch {
+    return null;
+  }
 }
 
 // ───────────────── Component ─────────────────
@@ -247,6 +290,7 @@ const AdminProductImport = () => {
         const metadataObj: Record<string, any> = {};
         let categoryName: string | null = null;
         let base64Images: string[] = [];
+        let imageUrls: string[] = [];
 
         for (const header of rawHeaders) {
           const field = resolveField(header);
@@ -260,6 +304,11 @@ const AdminProductImport = () => {
             categoryName = val;
           } else if (field === "base64_images") {
             base64Images = val.split("|").filter(Boolean);
+          } else if (field === "image_urls") {
+            imageUrls = val.split("|").filter(Boolean);
+          } else if (field === "source_url" || field === "source_id" || field === "attributes") {
+            // Store these as metadata automatically
+            metadataObj[field] = val;
           } else if (field === "price" || field === "price_raw") {
             payload[field] = parseFloat(val) || 0;
           } else if (field === "stock") {
@@ -352,6 +401,32 @@ const AdminProductImport = () => {
             } catch {}
           }
         }
+
+        // Handle image URLs (download from external URL → upload to Supabase Storage)
+        if (imageUrls.length > 0 && productId) {
+          const { data: existingImgs } = await supabase
+            .from("product_images").select("position").eq("product_id", productId)
+            .order("position", { ascending: false }).limit(1);
+          let pos = (existingImgs?.[0]?.position ?? -1) + 1;
+
+          for (const imgUrl of imageUrls) {
+            try {
+              const downloaded = await downloadImageAsBlob(imgUrl.trim());
+              if (!downloaded) continue;
+              const { blob, ext } = downloaded;
+              const filePath = `${productId}/${Date.now()}-${pos}.${ext}`;
+              const { error: upErr } = await supabase.storage
+                .from("product-images")
+                .upload(filePath, blob, { contentType: getMimeFromExt(ext) });
+              if (upErr) continue;
+              const { data: { publicUrl } } = supabase.storage.from("product-images").getPublicUrl(filePath);
+              await supabase.from("product_images").insert({
+                product_id: productId, url: publicUrl, position: pos++, is_video: false,
+              });
+              imagesUploaded++;
+            } catch {}
+          }
+        }
       } catch {
         errCount++;
       }
@@ -364,8 +439,8 @@ const AdminProductImport = () => {
   };
 
   const downloadTemplate = () => {
-    const csv = "name,price,stock,price_raw,catalog_number,barcode,description,is_active,category,base64_images\n" +
-      '"ספר לדוגמה",49.90,10,59.90,CAT001,1234567890,"תיאור הספר",true,"הלכה",""';
+    const csv = "name,price,stock,price_raw,catalog_number,barcode,description,is_active,category,base64_images,image_urls\n" +
+      '"ספר לדוגמה",49.90,10,59.90,CAT001,1234567890,"תיאור הספר",true,"הלכה","","https://example.com/img1.jpg|https://example.com/img2.jpg"';
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -374,8 +449,9 @@ const AdminProductImport = () => {
     a.click();
   };
 
-  // Find which column has images
-  const imageHeader = rawHeaders.find(h => resolveField(h) === "base64_images");
+  // Find which column has images (base64 or URL)
+  const imageHeader = rawHeaders.find(h => resolveField(h) === "base64_images")
+    || rawHeaders.find(h => resolveField(h) === "image_urls");
 
   return (
     <AdminLayout title="ייבוא מוצרים מ-CSV">

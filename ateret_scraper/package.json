@@ -1,0 +1,20 @@
+{
+  "name": "ateret-scraper",
+  "version": "1.0.0",
+  "description": "Scraper for ateret-judaica.com products via WooCommerce Store API",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/scraper.ts",
+    "build": "tsc",
+    "start:built": "node dist/scraper.js"
+  },
+  "dependencies": {
+    "csv-parse": "^6.1.0",
+    "csv-stringify": "^6.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
