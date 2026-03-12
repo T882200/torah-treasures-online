@@ -325,10 +325,9 @@ const AdminProductImport = () => {
         payload.slug = payload.slug || generateSlug(payload.name);
         if (!payload.price) payload.price = 0;
 
-        // Add metadata if any
-        if (Object.keys(metadataObj).length > 0) {
-          payload.metadata = metadataObj;
-        }
+        // Note: metadata fields (source_url, source_id, attributes) are kept
+        // in the CSV for reference but not written to the DB (no metadata column).
+        // They are available in the preview table and can be used for future features.
 
         // Upsert product
         let productId: string | null = null;
