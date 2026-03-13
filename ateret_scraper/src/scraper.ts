@@ -1,8 +1,9 @@
 /**
- * Ateret Judaica Scraper
+ * Ateret Judaica Scraper v2
  * ─────────────────────────────────────────────────────
  * Scrapes all products from ateret-judaica.com using
  * the public WooCommerce Store API (JSON, no HTML parsing).
+ * Now includes product variations (sizes, colors) with per-variant pricing.
  * Outputs a CSV file ready for import into our admin panel.
  */
 
@@ -17,7 +18,8 @@ const PRODUCTS_API = `${BASE_URL}/wp-json/wc/store/v1/products`;
 const CATEGORIES_API = `${BASE_URL}/wp-json/wc/store/v1/products/categories`;
 const PER_PAGE = 100;
 const DELAY_MS = 500; // polite delay between requests
-const USER_AGENT = "AteretScraper/1.0 (authorized-partner)";
+const VARIATION_DELAY_MS = 200; // shorter delay for variation detail fetches
+const USER_AGENT = "AteretScraper/2.0 (authorized-partner)";
 
 // Output paths
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -47,6 +49,11 @@ interface WcProductCategory {
   slug: string;
 }
 
+interface WcVariationRef {
+  id: number;
+  attributes: Array<{ name: string; value: string }>;
+}
+
 interface WcProduct {
   id: number;
   name: string;
@@ -62,6 +69,7 @@ interface WcProduct {
     regular_price: string;
     sale_price: string;
     currency_code: string;
+    price_range?: { min_amount: string; max_amount: string } | null;
   };
   images: WcProductImage[];
   categories: WcProductCategory[];
@@ -73,8 +81,23 @@ interface WcProduct {
     id: number;
     name: string;
     taxonomy: string;
+    has_variations?: boolean;
     terms: Array<{ id: number; name: string; slug: string }>;
   }>;
+  variations?: WcVariationRef[];
+}
+
+/** Details fetched per-variation from the API */
+interface WcVariationDetail {
+  id: number;
+  name: string;
+  parent: number;
+  type: string;
+  variation: string; // e.g. "מידה: מידה 50"
+  prices: { price: string; regular_price: string };
+  sku: string;
+  stock_status: string;
+  is_in_stock?: boolean;
 }
 
 interface CsvProduct {
@@ -91,6 +114,7 @@ interface CsvProduct {
   source_url: string;
   source_id: string;
   attributes: string;
+  variants: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────
@@ -204,12 +228,77 @@ async function fetchAllProducts(): Promise<WcProduct[]> {
   return all;
 }
 
+// ─── Fetch variation details ──────────────────────────
+async function fetchVariationDetail(variationId: number): Promise<WcVariationDetail | null> {
+  try {
+    const url = `${PRODUCTS_API}/${variationId}`;
+    return await fetchJson<WcVariationDetail>(url);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * For a variable product, fetch all variation details and build the variants string.
+ * Format: label:value:price_raw:sku|label:value:price_raw:sku|...
+ *
+ * The label comes from the product's attributes, the value/price/sku from each variation detail.
+ */
+async function buildVariantsString(product: WcProduct): Promise<{ variantsStr: string; variantCount: number }> {
+  const variations = product.variations || [];
+  if (variations.length === 0) return { variantsStr: "", variantCount: 0 };
+
+  const parts: string[] = [];
+  let fetched = 0;
+
+  for (const varRef of variations) {
+    const detail = await fetchVariationDetail(varRef.id);
+    fetched++;
+
+    if (!detail) continue;
+
+    // Build attribute pairs from the variation reference
+    // varRef.attributes: [{name: "מידה", value: "מידה-50"}]
+    const attrParts = varRef.attributes.map((a) => {
+      const label = decodeHtmlEntities(a.name || "");
+      // Decode URL-encoded Hebrew (e.g. %d7%9e%d7%99%d7%93%d7%94 → מידה)
+      // then clean up slug-style dashes
+      let rawValue = a.value || "";
+      try { rawValue = decodeURIComponent(rawValue); } catch { /* keep as-is */ }
+      let value = decodeHtmlEntities(rawValue).replace(/-/g, " ").trim();
+      return `${label}=${value}`;
+    });
+
+    const priceRaw = priceFromMinorUnits(detail.prices?.regular_price || detail.prices?.price || "0");
+    const sku = detail.sku || "";
+    const inStock = detail.stock_status === "in_stock" ? "1" : "0";
+
+    // Format: attrs;price;sku;stock  (attrs can be multiple key=value pairs separated by +)
+    parts.push(`${attrParts.join("+")};${priceRaw};${sku};${inStock}`);
+
+    // Rate limiting
+    if (fetched < variations.length) {
+      await sleep(VARIATION_DELAY_MS);
+    }
+  }
+
+  return { variantsStr: parts.join("|"), variantCount: parts.length };
+}
+
 // ─── Transform to CSV rows ────────────────────────────
-function transformProducts(
+async function transformProducts(
   products: WcProduct[],
   categoryMap: Map<number, string>
-): CsvProduct[] {
-  return products.map((p) => {
+): Promise<{ rows: CsvProduct[]; totalVariations: number }> {
+  const rows: CsvProduct[] = [];
+  let totalVariations = 0;
+  const variableProducts = products.filter((p) => p.type === "variable" && (p.variations?.length || 0) > 0);
+
+  console.log(`🔀 ${variableProducts.length} מוצרים עם וריאציות — שולף פרטי וריאציות...`);
+
+  for (let i = 0; i < products.length; i++) {
+    const p = products[i];
+
     // Get the best image URL (largest available)
     const imageUrls = p.images.map((img) => img.src || img.thumbnail).filter(Boolean);
 
@@ -226,7 +315,19 @@ function transformProducts(
     // Description: prefer short_description, fallback to full description
     const desc = stripHtml(p.short_description || p.description || "");
 
-    return {
+    // Fetch variations for variable products
+    let variantsStr = "";
+    if (p.type === "variable" && (p.variations?.length || 0) > 0) {
+      const result = await buildVariantsString(p);
+      variantsStr = result.variantsStr;
+      totalVariations += result.variantCount;
+
+      if (result.variantCount > 0) {
+        process.stdout.write(`   🔀 ${p.name.slice(0, 40)}... → ${result.variantCount} וריאציות\n`);
+      }
+    }
+
+    rows.push({
       name: decodeHtmlEntities(p.name),
       price: priceFromMinorUnits(p.prices.price),
       price_raw: priceFromMinorUnits(p.prices.regular_price),
@@ -240,8 +341,16 @@ function transformProducts(
       source_url: p.permalink,
       source_id: String(p.id),
       attributes: decodeHtmlEntities(attrs),
-    };
-  });
+      variants: variantsStr,
+    });
+
+    // Progress for overall transform
+    if ((i + 1) % 100 === 0) {
+      console.log(`   ⏳ ${i + 1}/${products.length} מוצרים עובדו`);
+    }
+  }
+
+  return { rows, totalVariations };
 }
 
 // ─── Write CSV ────────────────────────────────────────
@@ -262,6 +371,7 @@ function writeCsv(rows: CsvProduct[], outputPath: string): void {
       { key: "source_url", header: "source_url" },
       { key: "source_id", header: "source_id" },
       { key: "attributes", header: "attributes" },
+      { key: "variants", header: "variants" },
     ],
     bom: true, // UTF-8 BOM for Excel compatibility
   });
@@ -272,8 +382,9 @@ function writeCsv(rows: CsvProduct[], outputPath: string): void {
 // ─── Main ─────────────────────────────────────────────
 async function main() {
   console.log("═══════════════════════════════════════════════");
-  console.log("  🕎  Ateret Judaica Scraper");
+  console.log("  🕎  Ateret Judaica Scraper v2");
   console.log("  📡  Source: WooCommerce Store API (JSON)");
+  console.log("  🔀  Now with product variations!");
   console.log("═══════════════════════════════════════════════\n");
 
   const startTime = Date.now();
@@ -289,9 +400,9 @@ async function main() {
     process.exit(1);
   }
 
-  // Step 3: Transform
-  console.log("🔄 ממיר נתונים לפורמט CSV...");
-  const csvRows = transformProducts(products, categoryMap);
+  // Step 3: Transform (now async because of variation fetching)
+  console.log("🔄 ממיר נתונים לפורמט CSV...\n");
+  const { rows: csvRows, totalVariations } = await transformProducts(products, categoryMap);
 
   // Step 4: Write CSV
   writeCsv(csvRows, CSV_OUTPUT_PROJECT_ROOT);
@@ -304,6 +415,7 @@ async function main() {
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   const withImages = csvRows.filter((r) => r.image_urls).length;
   const withDesc = csvRows.filter((r) => r.description).length;
+  const withVariants = csvRows.filter((r) => r.variants).length;
   const categories = new Set(csvRows.map((r) => r.category).filter(Boolean));
 
   console.log("\n═══════════════════════════════════════════════");
@@ -312,10 +424,11 @@ async function main() {
   console.log(`  • קטגוריות: ${categories.size}`);
   console.log(`  • עם תמונות: ${withImages}`);
   console.log(`  • עם תיאור: ${withDesc}`);
+  console.log(`  • מוצרים עם וריאציות: ${withVariants}`);
+  console.log(`  • סה"כ וריאציות: ${totalVariations}`);
   console.log(`  • זמן ריצה: ${elapsed} שניות`);
   console.log("═══════════════════════════════════════════════");
   console.log("\n✅ הסקרייפר סיים בהצלחה!");
-  console.log("   ניתן להעלות את ATR_WEB.CSV דרך ממשק הניהול → ייבוא מוצרים");
 }
 
 main().catch((err) => {

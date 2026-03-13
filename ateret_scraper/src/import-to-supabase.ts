@@ -1,8 +1,8 @@
 /**
- * Direct Supabase Import
+ * Direct Supabase Import v2
  * ─────────────────────────────────────────────
- * Reads ATR_WEB_V2.CSV and imports/updates products directly
- * into Supabase, including image URLs in product_images table.
+ * Reads ATR_WEB_V3.CSV and imports/updates products directly
+ * into Supabase, including image URLs and product variants.
  * Runs in Node.js — no browser, no CORS issues.
  */
 
@@ -24,7 +24,7 @@ const ADMIN_EMAIL = "t882200@gmail.com";
 const ADMIN_PASSWORD = "oK777777";
 
 // ─── CSV path ───
-const CSV_PATH = resolve(__dirname, "../ATR_WEB_V2.CSV");
+const CSV_PATH = resolve(__dirname, "../ATR_WEB_V3.CSV");
 
 // ─── Helpers ───
 function generateSlug(name: string): string {
@@ -36,10 +36,41 @@ function generateSlug(name: string): string {
     + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 }
 
+/**
+ * Parse the variants column.
+ * Format: attrs;price;sku;stock|attrs;price;sku;stock|...
+ * Where attrs = label=value or label1=value1+label2=value2
+ * Returns array of parsed variants.
+ */
+function parseVariants(variantsStr: string): Array<{
+  label: string;
+  value: string;
+  price: number;
+  sku: string;
+  inStock: boolean;
+}> {
+  if (!variantsStr) return [];
+
+  return variantsStr.split("|").map((part) => {
+    const [attrs, priceStr, sku, stockStr] = part.split(";");
+    // For now, take the first attribute pair (most products have single attribute)
+    const firstAttr = (attrs || "").split("+")[0];
+    const [label, value] = firstAttr.split("=");
+
+    return {
+      label: (label || "").trim(),
+      value: (value || "").trim(),
+      price: parseFloat(priceStr) || 0,
+      sku: (sku || "").trim(),
+      inStock: stockStr === "1",
+    };
+  }).filter((v) => v.label && v.value);
+}
+
 // ─── Main ───
 async function main() {
   console.log("═══════════════════════════════════════════════");
-  console.log("  📥  Direct Supabase Import (Node.js)");
+  console.log("  📥  Direct Supabase Import v2 (with Variants)");
   console.log("═══════════════════════════════════════════════\n");
 
   // Sign in as admin
@@ -65,6 +96,7 @@ async function main() {
   console.log(`📖 קרא ${records.length} מוצרים מ-CSV\n`);
 
   let created = 0, updated = 0, errors = 0, imagesLinked = 0, categoriesCreated = 0;
+  let variantsCreated = 0, variantsUpdated = 0;
 
   // Category cache: name -> id
   const { data: existingCats } = await supabase.from("categories").select("id, name");
@@ -86,6 +118,7 @@ async function main() {
       const isActive = row.is_active?.toLowerCase() !== "false" && row.is_active !== "0";
       const categoryName = row.category?.trim() || "";
       const imageUrls = (row.image_urls || "").split("|").filter(Boolean);
+      const variants = parseVariants(row.variants || "");
 
       // ─── Find existing product by catalog_number ───
       let productId: string | null = null;
@@ -100,9 +133,18 @@ async function main() {
       }
 
       // ─── Build payload ───
+      // For variable products, use the minimum variant price as the base price
+      let displayPrice = price;
+      if (variants.length > 0) {
+        const variantPrices = variants.map((v) => v.price).filter((p) => p > 0);
+        if (variantPrices.length > 0) {
+          displayPrice = Math.min(...variantPrices);
+        }
+      }
+
       const payload: Record<string, any> = {
         name,
-        price,
+        price: displayPrice,
         price_raw: priceRaw,
         stock,
         catalog_number: catalogNumber || null,
@@ -157,7 +199,6 @@ async function main() {
           .eq("product_id", productId);
 
         if (!existingImgs || existingImgs.length === 0) {
-          // No images yet — insert external URLs
           for (let pos = 0; pos < imageUrls.length; pos++) {
             const url = imageUrls[pos].trim();
             if (!url) continue;
@@ -170,7 +211,49 @@ async function main() {
             if (!imgErr) imagesLinked++;
           }
         }
-        // If product already has images, skip (don't duplicate)
+      }
+
+      // ─── Handle variants ───
+      if (variants.length > 0 && productId) {
+        for (const v of variants) {
+          // Check if variant already exists for this product
+          const { data: existingVar } = await supabase
+            .from("product_variants")
+            .select("id")
+            .eq("product_id", productId)
+            .eq("variant_label", v.label)
+            .eq("variant_value", v.value)
+            .maybeSingle();
+
+          const varPayload = {
+            product_id: productId,
+            variant_label: v.label,
+            variant_value: v.value,
+            price_override: v.price > 0 ? v.price : null,
+            stock: v.inStock ? 10 : 0,
+            sku: v.sku || null,
+            is_active: true,
+          };
+
+          if (existingVar) {
+            // Update existing variant
+            const { error: varErr } = await supabase
+              .from("product_variants")
+              .update({
+                price_override: varPayload.price_override,
+                stock: varPayload.stock,
+                sku: varPayload.sku,
+              })
+              .eq("id", existingVar.id);
+            if (!varErr) variantsUpdated++;
+          } else {
+            // Insert new variant
+            const { error: varErr } = await supabase
+              .from("product_variants")
+              .insert(varPayload);
+            if (!varErr) variantsCreated++;
+          }
+        }
       }
     } catch (err: any) {
       errors++;
@@ -181,7 +264,7 @@ async function main() {
 
     // Progress
     if ((i + 1) % 50 === 0 || i === records.length - 1) {
-      console.log(`   ⏳ ${i + 1}/${records.length} (${created} חדשים, ${updated} עודכנו, ${imagesLinked} תמונות)`);
+      console.log(`   ⏳ ${i + 1}/${records.length} (${created} חדשים, ${updated} עודכנו, ${imagesLinked} תמונות, ${variantsCreated + variantsUpdated} וריאציות)`);
     }
   }
 
@@ -191,6 +274,8 @@ async function main() {
   console.log(`  • עודכנו: ${updated}`);
   console.log(`  • תמונות קושרו: ${imagesLinked}`);
   console.log(`  • קטגוריות חדשות: ${categoriesCreated}`);
+  console.log(`  • וריאציות חדשות: ${variantsCreated}`);
+  console.log(`  • וריאציות עודכנו: ${variantsUpdated}`);
   console.log(`  • שגיאות: ${errors}`);
   console.log("═══════════════════════════════════════════════");
   console.log("\n✅ הייבוא הסתיים!");
