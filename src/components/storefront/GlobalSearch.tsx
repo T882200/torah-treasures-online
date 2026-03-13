@@ -77,6 +77,14 @@ const GlobalSearch = () => {
     navigate(`/product/${slug}`);
   };
 
+  const handleSearchSubmit = () => {
+    if (query.trim()) {
+      setOpen(false);
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+      setQuery("");
+    }
+  };
+
   return (
     <>
       <button
@@ -111,6 +119,12 @@ const GlobalSearch = () => {
                     ref={inputRef}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSearchSubmit();
+                      }
+                    }}
                     placeholder="חיפוש מוצרים..."
                     className="border-0 shadow-none focus-visible:ring-0 p-0 h-auto text-base text-gray-900 placeholder:text-gray-400"
                   />
@@ -154,7 +168,16 @@ const GlobalSearch = () => {
                 )}
 
                 <div className="p-2 border-t border-gray-200 text-center">
-                  <span className="text-xs text-gray-400">⌘K לחיפוש מהיר</span>
+                  {query.trim() && results.length > 0 ? (
+                    <button
+                      onClick={handleSearchSubmit}
+                      className="text-xs text-accent hover:text-accent/80 font-medium transition-colors"
+                    >
+                      הצג את כל התוצאות עבור "{query}" &larr;
+                    </button>
+                  ) : (
+                    <span className="text-xs text-gray-400">⌘K לחיפוש מהיר</span>
+                  )}
                 </div>
               </div>
             </motion.div>

@@ -38,6 +38,7 @@ import AdminHomepage from "./pages/admin/AdminHomepage";
 import AdminImages from "./pages/admin/AdminImages";
 import ChatbotWidget from "./components/storefront/ChatbotWidget";
 import DynamicFontLoader from "./components/storefront/DynamicFontLoader";
+import SearchPage from "./pages/SearchPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/stam" element={<StamDepartmentPage />} />
               <Route path="/category/:slug" element={<CategoryPage />} />
               <Route path="/product/:slug" element={<ProductPage />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/auth" element={<AuthPage />} />
