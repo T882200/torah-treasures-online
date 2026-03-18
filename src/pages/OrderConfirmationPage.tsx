@@ -4,10 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/storefront/Header";
 import Footer from "@/components/storefront/Footer";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Package, ArrowRight } from "lucide-react";
+import { CheckCircle, Package, ArrowRight, AlertCircle, Loader2, CreditCard } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 
 const OrderConfirmationPage = () => {
   const { orderNumber } = useParams<{ orderNumber: string }>();
+  const [retrying, setRetrying] = useState(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["order-confirmation", orderNumber],
@@ -40,9 +43,16 @@ const OrderConfirmationPage = () => {
             <h1 className="font-display text-3xl font-bold text-foreground mb-2">
               ההזמנה התקבלה! 🎉
             </h1>
-            <p className="text-muted-foreground mb-8">
+            <p className="text-muted-foreground mb-4">
               תודה על ההזמנה. מספר הזמנה: <span className="font-bold text-foreground">#{order.order_number}</span>
             </p>
+            <div className="mb-8">
+              {order.payment_status === "paid" ? (
+                <Badge className="bg-green-100 text-green-800 text-sm px-3 py-1">שולם בהצלחה</Badge>
+              ) : (
+                <Badge variant="outline" className="text-orange-600 border-orange-300 text-sm px-3 py-1">ממתין לתשלום</Badge>
+              )}
+            </div>
 
             <div className="bg-card rounded-lg border border-border p-6 shadow-card text-right mb-6">
               <h2 className="font-display font-bold text-lg mb-4 flex items-center gap-2">
@@ -85,6 +95,43 @@ const OrderConfirmationPage = () => {
                   {(order.customers as any).city}<br />
                   {(order.customers as any).phone}
                 </p>
+              </div>
+            )}
+
+            {order.payment_status !== "paid" && (
+              <div className="mb-6">
+                <Button
+                  variant="gold"
+                  size="lg"
+                  className="gap-2"
+                  disabled={retrying}
+                  onClick={async () => {
+                    setRetrying(true);
+                    try {
+                      const customer = order.customers as any;
+                      const { data: paymentData, error } = await supabase.functions.invoke("create-payment", {
+                        body: {
+                          orderId: order.id,
+                          amount: order.total,
+                          orderNumber: order.order_number,
+                          customerName: customer?.full_name || "",
+                          customerEmail: customer?.email || "",
+                          customerPhone: customer?.phone || "",
+                        },
+                      });
+                      if (error || !paymentData?.url) throw new Error("Payment creation failed");
+                      window.location.href = paymentData.url;
+                    } catch {
+                      setRetrying(false);
+                    }
+                  }}
+                >
+                  {retrying ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> יוצר דף תשלום...</>
+                  ) : (
+                    <><CreditCard className="h-4 w-4" /> שלם עכשיו</>
+                  )}
+                </Button>
               </div>
             )}
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/storefront/Header";
 import Footer from "@/components/storefront/Footer";
@@ -161,9 +161,29 @@ const CheckoutPage = () => {
           .eq("code", appliedCoupon);
       }
 
-      toast.success(`ההזמנה #${order.order_number} נוצרה בהצלחה! 🎉`);
+      // Call Cardcom to create payment page
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+        "create-payment",
+        {
+          body: {
+            orderId: order.id,
+            amount: total,
+            orderNumber: order.order_number,
+            customerName: fullName,
+            customerEmail: form.email,
+            customerPhone: form.phone,
+          },
+        }
+      );
+
+      if (paymentError || !paymentData?.url) {
+        toast.error("שגיאה ביצירת דף תשלום. ההזמנה נשמרה — נסה לשלם שוב מדף ההזמנה.");
+        navigate(`/order-confirmation/${order.order_number}`);
+        return;
+      }
+
       clearCart();
-      navigate(`/order-confirmation/${order.order_number}`);
+      window.location.href = paymentData.url;
     } catch (err: unknown) {
       console.error("Checkout error:", err);
       toast.error("שגיאה ביצירת ההזמנה, נסה שוב");
@@ -172,8 +192,13 @@ const CheckoutPage = () => {
     }
   };
 
+  useEffect(() => {
+    if (items.length === 0) {
+      navigate("/cart");
+    }
+  }, [items.length, navigate]);
+
   if (items.length === 0) {
-    navigate("/cart");
     return null;
   }
 
@@ -292,12 +317,12 @@ const CheckoutPage = () => {
                 <h2 className="font-display font-bold text-lg">תשלום</h2>
               </div>
               <p className="text-muted-foreground text-sm">
-                כרגע ההזמנה נשמרת כ״ממתינה לתשלום״. שער תשלום יתווסף בקרוב.
+                לאחר אישור הפרטים, תועבר לדף תשלום מאובטח של Cardcom לביצוע התשלום בכרטיס אשראי.
               </p>
             </div>
 
             <Button type="submit" variant="hero" size="lg" className="w-full md:w-auto" disabled={submitting}>
-              {submitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> שולח...</> : `בצע הזמנה — ₪${total.toFixed(2)}`}
+              {submitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> מעבד...</> : `המשך לתשלום — ₪${total.toFixed(2)}`}
             </Button>
           </div>
 

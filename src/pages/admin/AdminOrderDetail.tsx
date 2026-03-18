@@ -237,6 +237,31 @@ const AdminOrderDetail = () => {
             </CardContent>
           </Card>
 
+          {/* Payment Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><CreditCard className="h-4 w-4" /> פרטי תשלום</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">סטטוס</span>
+                <Badge variant={order.payment_status === "paid" ? "default" : "outline"}>
+                  {order.payment_status === "paid" ? "שולם" : order.payment_status === "refunded" ? "הוחזר" : "לא שולם"}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">אמצעי</span>
+                <span>{order.payment_method === "credit_card" ? "כרטיס אשראי" : order.payment_method === "manual" ? "ידני" : order.payment_method || "—"}</span>
+              </div>
+              {order.payment_ref && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">מזהה עסקה</span>
+                  <span dir="ltr" className="font-mono text-xs">{order.payment_ref}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Timeline */}
           <Card>
             <CardHeader><CardTitle>ציר זמן</CardTitle></CardHeader>

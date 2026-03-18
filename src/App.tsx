@@ -17,6 +17,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AccountPage from "./pages/AccountPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
+import PaymentReturnPage from "./pages/PaymentReturnPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminProductEdit from "./pages/admin/AdminProductEdit";
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmationPage />} />
+              <Route path="/payment-return" element={<PaymentReturnPage />} />
 
               {/* Authenticated */}
               <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
